@@ -12,7 +12,7 @@ namespace GameHelper.RemoteEnums
     /// NOTE: Do not forget to add '= 1' on the first enum.
     /// NOTE: flask_charges_used_+% whatever you read in _rid, add +1 to it.
     /// NOTE: offset finder tool now have this value -> Charges group
-    public enum GameStats
+	public enum GameStats
     {
 #pragma warning disable CS1591, SA1602
         level = 0 + 1,
@@ -24894,6 +24894,13 @@ namespace GameHelper.RemoteEnums
         walking_calamity_ignore_first_x_enemies_for_frequency_increase = 24876 + 1,
         num_socketed_abyssal_eyes = 24877 + 1,
         map_timeout_override = 24878 + 1,
+        mtx_prisoner_penitent_back_attachment = 24879 + 1,
+        mtx_travelling_wisdom_back_attachment = 24880 + 1,
+        main_hand_mtx_weapon_trail_clone_effect = 24881 + 1,
+        off_hand_mtx_weapon_trail_clone_effect = 24882 + 1,
+        local_mtx_mirage_weapon_effect = 24883 + 1,
+        main_hand_mtx_mirage_weapon_effect = 24884 + 1,
+        off_hand_mtx_mirage_weapon_effect = 24885 + 1,
 #pragma warning restore CS1591, SA1602
     }
 }
