@@ -162,6 +162,12 @@ namespace Radar
         public Dictionary<string, string> BossArenaTgts = new();
 
         /// <summary>
+        /// Gets the stairs TGT paths and their display names.
+        /// </summary>
+        [JsonIgnore]
+        public Dictionary<string, string> StairsTgts = new();
+
+        /// <summary>
         /// Icons to display on the map. This list includes icons for
         /// OtherImportantObjects that are in custom category created by user
         /// </summary>
@@ -322,6 +328,8 @@ namespace Radar
 
             this.BaseIcons.TryAdd("Yellow Bestiary Monster", new IconPicker(iconPathName, 6, 2, 35, IconSize));
             this.BaseIcons.TryAdd("Red Bestiary Monster", new IconPicker(iconPathName, 7, 2, 35, IconSize));
+
+            this.BaseIcons.TryAdd("Stairs", new IconPicker(iconPathName, 4, 1, 40, IconSize));
         }
 
         private void AddDefaultPOIMonsterIcons(string iconPathName)

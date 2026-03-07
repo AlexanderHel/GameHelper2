@@ -66,6 +66,8 @@ namespace Radar
 
         private string BossArenaTgtPathName => Path.Join(this.DllDirectory, "boss_arena_tgt_files.txt");
 
+        private string StairsTgtPathName => Path.Join(this.DllDirectory, "stairs_tgt_files.txt");
+
         /// <inheritdoc/>
         public override void DrawSettings()
         {
@@ -330,6 +332,18 @@ namespace Radar
                 Console.WriteLine($"BossArenaTgts: file not found at {this.BossArenaTgtPathName}");
             }
 
+            if (File.Exists(this.StairsTgtPathName))
+            {
+                var stairsfiles = File.ReadAllText(this.StairsTgtPathName);
+                this.Settings.StairsTgts = JsonConvert.DeserializeObject
+                    <Dictionary<string, string>>(stairsfiles);
+                Console.WriteLine($"StairsTgts: loaded {this.Settings.StairsTgts.Count} entries");
+            }
+            else
+            {
+                Console.WriteLine($"StairsTgts: file not found at {this.StairsTgtPathName}");
+            }
+
             this.Settings.AddDefaultIcons(this.DllDirectory);
 
             this.onMove = CoroutineHandler.Start(this.OnMove());
@@ -358,6 +372,13 @@ namespace Radar
                 var bossfiles = JsonConvert.SerializeObject(
                     this.Settings.BossArenaTgts, Formatting.Indented);
                 File.WriteAllText(this.BossArenaTgtPathName, bossfiles);
+            }
+
+            if (this.Settings.StairsTgts.Count > 0)
+            {
+                var stairsfiles = JsonConvert.SerializeObject(
+                    this.Settings.StairsTgts, Formatting.Indented);
+                File.WriteAllText(this.StairsTgtPathName, stairsfiles);
             }
         }
 
@@ -543,6 +564,15 @@ namespace Radar
                     }
 
                     this.DrawIconAtTgtLocations(fgDraw, mapCenter, pPos, playerRender, tgtKV.Value, bossIcon, iconSizeMultiplier);
+                }
+                else if (this.Settings.StairsTgts.ContainsKey(tgtKV.Key))
+                {
+                    if (!this.Settings.BaseIcons.TryGetValue("Stairs", out var stairsIcon))
+                    {
+                        continue;
+                    }
+
+                    this.DrawIconAtTgtLocations(fgDraw, mapCenter, pPos, playerRender, tgtKV.Value, stairsIcon, iconSizeMultiplier);
                 }
             }
         }
