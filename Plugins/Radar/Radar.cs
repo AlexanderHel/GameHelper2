@@ -870,6 +870,20 @@ namespace Radar
                 this.CleanUpRadarPluginCaches();
                 this.currentAreaName = Core.States.InGameStateObject.CurrentWorldInstance.AreaDetails.Id;
                 this.GenerateMapTexture();
+                this.LogBossArenaTgtMatches();
+            }
+        }
+
+        private void LogBossArenaTgtMatches()
+        {
+            var currentAreaInstance = Core.States.InGameStateObject.CurrentAreaInstance;
+            Console.WriteLine($"BossArena: area={this.currentAreaName}, TgtTilesLocations count={currentAreaInstance.TgtTilesLocations.Count}, BossArenaTgts count={this.Settings.BossArenaTgts.Count}");
+            foreach (var bossTgt in this.Settings.BossArenaTgts)
+            {
+                if (currentAreaInstance.TgtTilesLocations.ContainsKey(bossTgt.Key))
+                {
+                    Console.WriteLine($"  BossArena MATCH: \"{bossTgt.Key}\"");
+                }
             }
         }
 
