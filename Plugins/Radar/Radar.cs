@@ -824,6 +824,14 @@ namespace Radar
                                 DrawIcon(expMarkerIcon);
                             }
                         }
+                        else if (entityValue.EntityCustomGroup == RadarSettings.BossCheckpointGroup)
+                        {
+                            if (baseIcons.TryGetValue("Boss Checkpoint", out var bossCheckpointIcon) &&
+                                bossCheckpointIcon.IconScale > 0)
+                            {
+                                DrawIcon(bossCheckpointIcon);
+                            }
+                        }
                         else if (entityValue.EntityCustomGroup == RadarSettings.ExpeditionRemnantGroup)
                         {
                             if (entityValue.TryGetComponent<ObjectMagicProperties>(out var remnantOmp))

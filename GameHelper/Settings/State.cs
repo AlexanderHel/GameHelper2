@@ -211,6 +211,7 @@ namespace GameHelper.Settings
             ("Metadata/MiscellaneousObjects/Expedition/ExpeditionMarker", 100),
             ("Metadata/MiscellaneousObjects/Expedition/ExpeditionRelic", 101),
             ("Metadata/Terrain/Gallows/Leagues/Expedition/Objects/Expedition", 100),
+            ("Metadata/MiscellaneousObjects/Checkpoints/Checkpoint_Endgame_Boss", 102),
         };
 
         /// <summary>
@@ -220,6 +221,7 @@ namespace GameHelper.Settings
         public List<string> MonstersPathsToIgnore = new()
         {
             "Metadata/Monsters/LeagueIncursionNew/Garrison/VaalTrainingDummy",
+            "Metadata/Monsters/PerennialKingStage2/PerennialKingCorpseFriend",
         };
 
         /// <summary>
