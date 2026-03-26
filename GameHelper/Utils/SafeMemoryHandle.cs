@@ -21,6 +21,11 @@ namespace GameHelper.Utils
     internal class SafeMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
         /// <summary>
+        ///     Max valid user-mode address on 64-bit Windows (48-bit addressing).
+        /// </summary>
+        private const long MaxUserModeAddress = 0x7FFFFFFFFFFF;
+
+        /// <summary>
         ///     Initializes a new instance of the <see cref="SafeMemoryHandle" /> class.
         /// </summary>
         internal SafeMemoryHandle()
@@ -60,7 +65,8 @@ namespace GameHelper.Utils
             where T : unmanaged
         {
             T result = default;
-            if (this.IsInvalid || address.ToInt64() <= 0)
+            var addr = address.ToInt64();
+            if (this.IsInvalid || addr <= 0 || addr > MaxUserModeAddress)
             {
                 return result;
             }
@@ -114,7 +120,8 @@ namespace GameHelper.Utils
         internal T[] ReadMemoryArray<T>(IntPtr address, int nsize)
             where T : unmanaged
         {
-            if (this.IsInvalid || address.ToInt64() <= 0 || nsize <= 0)
+            var addr = address.ToInt64();
+            if (this.IsInvalid || addr <= 0 || addr > MaxUserModeAddress || nsize <= 0)
             {
                 return Array.Empty<T>();
             }

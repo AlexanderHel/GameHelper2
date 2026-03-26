@@ -278,11 +278,14 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 return;
             }
 
+            var staleCleanup = Core.GHSettings.EnableStaleEntityCleanup;
+            var staleThreshold = Core.GHSettings.StaleEntityFrameThreshold;
             this.uselesssEntities = 0;
             Parallel.ForEach(data, (kv) =>
             {
                 if (kv.Value.IsValid)
                 {
+                    kv.Value.ResetInvalidFrames();
                     if (dc == false && kv.Value.EntityState == EntityStates.Useless)
                     {
                         Interlocked.Increment(ref this.uselesssEntities);
@@ -290,16 +293,26 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 }
                 else
                 {
+                    kv.Value.IncrementInvalidFrames();
+
+                    var shouldRemove = false;
+
                     if (kv.Value.EntityState == EntityStates.MonsterFriendly ||
                         (kv.Value.CanExplodeOrRemovedFromGame &&
                         this.Player.DistanceFrom(kv.Value) < AreaInstanceConstants.NETWORK_BUBBLE_RADIUS))
                     {
-                        // This logic isn't perfect in case something happens to the entity before
-                        // we can cache the location of that entity. In that case we will just
-                        // delete that entity anyway. This activity is fine as long as it doesn't
-                        // crash the GameHelper. This logic is to detect if entity exploded due to
-                        // explodi-chest or just left the network bubble since entity leaving network
-                        // bubble is same as entity exploded.
+                        shouldRemove = true;
+                    }
+
+                    // Time-based cleanup: remove entities invalid for N consecutive frames.
+                    if (!shouldRemove && staleCleanup &&
+                        kv.Value.ConsecutiveInvalidFrames >= staleThreshold)
+                    {
+                        shouldRemove = true;
+                    }
+
+                    if (shouldRemove)
+                    {
                         data.TryRemove(kv.Key, out _);
                         if (dc == false)
                         {

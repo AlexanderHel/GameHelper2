@@ -51,15 +51,21 @@ namespace GameHelper.Cache
                 if (this.grandparent != null && this.grandparent.cache.ContainsKey(address))
                 {
                 }
-                else if (!this.cache.ContainsKey(address))
+                else
                 {
-                    try
+                    lock (this.cache)
                     {
-                        this.cache.Add(address, new(address, this));
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"Failed to add the UiElement Parent in the cache. 0x{address.ToInt64():X} due to {e}");
+                        if (!this.cache.ContainsKey(address))
+                        {
+                            try
+                            {
+                                this.cache.Add(address, new(address, this));
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine($"Failed to add the UiElement Parent in the cache. 0x{address.ToInt64():X} due to {e}");
+                            }
+                        }
                     }
                 }
             }
@@ -91,7 +97,14 @@ namespace GameHelper.Cache
 
         public void UpdateAllParentsParallel()
         {
-            Parallel.ForEach(this.cache, (data) =>
+            KeyValuePair<IntPtr, UiElementBase>[] snapshot;
+            lock (this.cache)
+            {
+                snapshot = new KeyValuePair<IntPtr, UiElementBase>[this.cache.Count];
+                ((ICollection<KeyValuePair<IntPtr, UiElementBase>>)this.cache).CopyTo(snapshot, 0);
+            }
+
+            Parallel.ForEach(snapshot, (data) =>
             {
                 try
                 {

@@ -543,11 +543,8 @@ namespace GameHelper.Settings
                 ImGuiHelper.ToolTip("WARNING: There is no rate limiter in GameHelper, once V-Sync is off,\n" +
                     "it's your responsibility to use external rate limiter e.g. NVIDIA Control Panel\n" +
                     "-> Manage 3D Settings -> Set Max Framerate to what your monitor support.");
-#if DEBUG
                 ImGui.Checkbox("Process all renderable entities", ref Core.GHSettings.ProcessAllRenderableEntities);
-                ImGuiHelper.ToolTip("WARNING: This is a debug only feature, it should not be used when actually playing the game." +
-                    "It will greatly reduce the GH speed as well as increase crashes/gliches. Always keep it unchecked.");
-#endif
+                ImGuiHelper.ToolTip("WARNING: This will greatly reduce GH speed as well as increase crashes/glitches. Always keep it unchecked.");
                 ImGui.Checkbox("Disable debug counters (do it on 6 man party + juiced maps only)", ref Core.GHSettings.DisableAllCounters);
                 ImGui.Text("Entity MaxDegreeOfParallelism");
                 ImGuiHelper.ToolTip("This limits the entity reading algorithm to a set number of CPUs." +
@@ -574,6 +571,29 @@ namespace GameHelper.Settings
                 }
 
                 ImGui.Checkbox("Is Taiwan client", ref Core.GHSettings.IsTaiwanClient);
+
+                ImGui.Separator();
+                ImGui.Text("Entity Staleness Fixes");
+                ImGuiHelper.ToolTip("These options help detect and fix stale entity data " +
+                    "(e.g. NPCs that teleport but keep old position in memory).");
+
+                ImGui.Checkbox("Enable NPC entity cleanup", ref Core.GHSettings.EnableNpcEntityCleanup);
+                ImGuiHelper.ToolTip("Include NPC entities in the removal logic when they go invalid.\n" +
+                    "Prevents stale NPC entities from lingering in the entity dictionary.");
+
+                ImGui.Checkbox("Enable stale entity cleanup", ref Core.GHSettings.EnableStaleEntityCleanup);
+                ImGuiHelper.ToolTip("Remove any entity that stays invalid for many consecutive frames,\n" +
+                    "regardless of entity type. Catches NPCs and other entities that\n" +
+                    "the default cleanup misses.");
+
+                if (Core.GHSettings.EnableStaleEntityCleanup)
+                {
+                    ImGui.SameLine();
+                    ImGui.SetNextItemWidth(80);
+                    ImGui.InputInt("threshold (frames)", ref Core.GHSettings.StaleEntityFrameThreshold);
+                    if (Core.GHSettings.StaleEntityFrameThreshold < 10)
+                        Core.GHSettings.StaleEntityFrameThreshold = 10;
+                }
             }
         }
 

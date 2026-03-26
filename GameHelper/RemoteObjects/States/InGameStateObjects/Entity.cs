@@ -38,6 +38,7 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         private EntitySubtypes oldSubtypeWithoutPOI;
         private int dormantCheckSkip;
         private int unresolvedRetryCount;
+        private int consecutiveInvalidFrames;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Entity" /> class.
@@ -121,7 +122,24 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             this.EntityType == EntityTypes.DeliriumSpawner ||
             this.EntityType == EntityTypes.DeliriumBomb ||
             this.EntityType == EntityTypes.OtherImportantObjects ||
-            this.EntityType == EntityTypes.Monster;
+            this.EntityType == EntityTypes.Monster ||
+            (Core.GHSettings.EnableNpcEntityCleanup &&
+             this.EntityType == EntityTypes.NPC);
+
+        /// <summary>
+        ///     Gets how many consecutive frames this entity has been invalid.
+        /// </summary>
+        public int ConsecutiveInvalidFrames => this.consecutiveInvalidFrames;
+
+        /// <summary>
+        ///     Increments the consecutive invalid frames counter.
+        /// </summary>
+        internal void IncrementInvalidFrames() => this.consecutiveInvalidFrames++;
+
+        /// <summary>
+        ///     Resets the consecutive invalid frames counter.
+        /// </summary>
+        internal void ResetInvalidFrames() => this.consecutiveInvalidFrames = 0;
 
         /// <summary>
         ///     Calculate the distance from the other entity.
