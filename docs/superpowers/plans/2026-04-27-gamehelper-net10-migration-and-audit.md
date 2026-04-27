@@ -961,7 +961,8 @@ If Step 1 changed source comments (renaming placeholder IDs to real ones), stage
 
 ```bash
 cd /c/Users/D/Desktop/GameHelper2
-git add docs/audit/2026-04-27-bug-audit.md
+# `docs/` is in .gitignore, so the audit file needs -f to be added.
+git add -f docs/audit/2026-04-27-bug-audit.md
 # If source TODO IDs changed in Step 4:
 git add GameHelper/ GameOffsets/
 git commit -m "docs(audit): add 2026-04-27 bug audit report
