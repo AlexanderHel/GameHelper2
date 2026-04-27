@@ -5,6 +5,7 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <StartupObject>Launcher.Program</StartupObject>
   </PropertyGroup>
