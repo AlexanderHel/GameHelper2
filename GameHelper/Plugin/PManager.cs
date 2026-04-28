@@ -17,9 +17,9 @@ namespace GameHelper.Plugin
     using Ui;
     using Utils;
 
-    internal record PluginWithName(string Name, IPCore Plugin);
+    internal record PluginWithName(string Name, IPCore Plugin, PluginAssemblyLoadContext Alc);
 
-    internal record PluginContainer(string Name, IPCore Plugin, PluginMetadata Metadata);
+    internal record PluginContainer(string Name, IPCore Plugin, PluginMetadata Metadata, PluginAssemblyLoadContext Alc);
 
     /// <summary>
     ///     Finds, loads and unloads the plugins.
@@ -42,7 +42,19 @@ namespace GameHelper.Plugin
 #if DEBUG
             GetAllPluginNames();
 #endif
-            Parallel.ForEach(Plugins, EnablePluginIfRequired);
+            // F-079: replaced Parallel.ForEach with foreach. Plugin OnEnable is rare
+            // (once at startup), should be single-threaded for plugin authors who
+            // assume ImGui / coroutine-registration semantics work on the render thread.
+            PluginContainer[] snapshot;
+            lock (Plugins)
+            {
+                snapshot = Plugins.ToArray();
+            }
+
+            foreach (var container in snapshot)
+            {
+                EnablePluginIfRequired(container);
+            }
             CoroutineHandler.Start(SavePluginSettingsCoroutine());
             CoroutineHandler.Start(SavePluginMetadataCoroutine());
             Core.CoroutinesRegistrar.Add(CoroutineHandler.Start(
@@ -63,7 +75,13 @@ namespace GameHelper.Plugin
 #if DEBUG
         private static void GetAllPluginNames()
         {
-            foreach (var plugin in Plugins)
+            PluginContainer[] snapshot;
+            lock (Plugins)
+            {
+                snapshot = Plugins.ToArray();
+            }
+
+            foreach (var plugin in snapshot)
             {
                 PluginNames.Add(plugin.Name);
             }
@@ -74,18 +92,45 @@ namespace GameHelper.Plugin
         /// </summary>
         internal static bool UnloadPlugin(string name)
         {
-            foreach (var plugin in Plugins)
+            PluginContainer? target;
+            lock (Plugins)
             {
-                if (plugin.Name == name)
-                {
-                    plugin.Plugin.SaveSettings();
-                    plugin.Plugin.OnDisable();
-                    Plugins.Remove(plugin);
-                    return true;
-                }
+                target = Plugins.FirstOrDefault(p => p.Name == name);
             }
 
-            return false;
+            if (target == null)
+            {
+                return false;
+            }
+
+            target.Plugin.SaveSettings();
+            target.Plugin.OnDisable();
+
+            lock (Plugins)
+            {
+                Plugins.Remove(target);
+            }
+
+            // F-075: actually unload the assembly via the collectible ALC tracked
+            // in the PluginContainer (F-074 made the ALC collectible).
+            var alcRef = new WeakReference(target.Alc);
+            target.Alc.Unload();
+
+            // Run GC repeatedly until the ALC is unreachable (or we give up after
+            // 10 attempts). This is the documented .NET pattern for collectible
+            // ALC unload - see https://learn.microsoft.com/en-us/dotnet/standard/assembly/unloadability.
+            for (var i = 0; i < 10 && alcRef.IsAlive; i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+
+            if (alcRef.IsAlive)
+            {
+                Console.WriteLine($"[PManager.UnloadPlugin] {name}: ALC still alive after 10 GC cycles - likely a static reflection cache pinning a type. Plugin removed from manager but assembly remains loaded.");
+            }
+
+            return true;
         }
 
         internal static bool LoadPlugin(string name)
@@ -122,7 +167,7 @@ namespace GameHelper.Plugin
                 x => (x.Attributes & FileAttributes.Hidden) == 0).ToList();
         }
 
-        private static Assembly? ReadPluginFiles(DirectoryInfo pluginDirectory)
+        private static (Assembly assembly, PluginAssemblyLoadContext alc)? ReadPluginFiles(DirectoryInfo pluginDirectory)
         {
             try
             {
@@ -137,8 +182,9 @@ namespace GameHelper.Plugin
                     return null;
                 }
 
-                return new PluginAssemblyLoadContext(dllFile.FullName)
-                   .LoadFromAssemblyPath(dllFile.FullName);
+                var alc = new PluginAssemblyLoadContext(dllFile.FullName);
+                var assembly = alc.LoadFromAssemblyPath(dllFile.FullName);
+                return (assembly, alc);
             }
             catch (Exception e)
             {
@@ -150,18 +196,18 @@ namespace GameHelper.Plugin
 
         private static PluginWithName? LoadPlugin(DirectoryInfo pluginDirectory)
         {
-            var assembly = ReadPluginFiles(pluginDirectory);
-            if (assembly != null)
+            var loaded = ReadPluginFiles(pluginDirectory);
+            if (loaded != null)
             {
                 var relativePluginDir = pluginDirectory.FullName.Replace(
                     State.PluginsDirectory.FullName, State.PluginsDirectory.Name);
-                return LoadPlugin(assembly, relativePluginDir);
+                return LoadPlugin(loaded.Value.assembly, loaded.Value.alc, relativePluginDir);
             }
 
             return null;
         }
 
-        private static PluginWithName? LoadPlugin(Assembly assembly, string pluginRootDirectory)
+        private static PluginWithName? LoadPlugin(Assembly assembly, PluginAssemblyLoadContext alc, string pluginRootDirectory)
         {
             try
             {
@@ -192,7 +238,7 @@ namespace GameHelper.Plugin
                 }
 
                 pluginCore.SetPluginDllLocation(pluginRootDirectory);
-                return new PluginWithName(assembly.GetName().Name ?? string.Empty, pluginCore);
+                return new PluginWithName(assembly.GetName().Name ?? string.Empty, pluginCore, alc);
             }
             catch (Exception e)
             {
@@ -204,14 +250,19 @@ namespace GameHelper.Plugin
         private static void LoadPluginMetadata(IEnumerable<PluginWithName> plugins)
         {
             var metadata = JsonHelper.CreateOrLoadJsonFile<Dictionary<string, PluginMetadata>>(State.PluginsMetadataFile);
-            Plugins.AddRange(
-                plugins.Select(
-                    x => new PluginContainer(
+            var newContainers = plugins.Select(
+                x => new PluginContainer(
+                    x.Name,
+                    x.Plugin,
+                    metadata.GetValueOrDefault(
                         x.Name,
-                        x.Plugin,
-                        metadata.GetValueOrDefault(
-                            x.Name,
-                            new PluginMetadata()))));
+                        new PluginMetadata()),
+                    x.Alc)).ToList();
+
+            lock (Plugins)
+            {
+                Plugins.AddRange(newContainers);
+            }
 
             SavePluginMetadata();
         }
@@ -226,7 +277,13 @@ namespace GameHelper.Plugin
 
         private static void SavePluginMetadata()
         {
-            JsonHelper.SafeToFile(Plugins.ToDictionary(x => x.Name, x => x.Metadata), State.PluginsMetadataFile);
+            Dictionary<string, PluginMetadata> snapshot;
+            lock (Plugins)
+            {
+                snapshot = Plugins.ToDictionary(x => x.Name, x => x.Metadata);
+            }
+
+            JsonHelper.SafeToFile(snapshot, State.PluginsMetadataFile);
         }
 
         private static IEnumerator<Wait> SavePluginMetadataCoroutine()
@@ -243,7 +300,13 @@ namespace GameHelper.Plugin
             while (true)
             {
                 yield return new Wait(GameHelperEvents.TimeToSaveAllSettings);
-                foreach (var container in Plugins)
+                PluginContainer[] snapshot;
+                lock (Plugins)
+                {
+                    snapshot = Plugins.ToArray();
+                }
+
+                foreach (var container in snapshot)
                 {
                     try
                     {
@@ -272,7 +335,13 @@ namespace GameHelper.Plugin
                     continue;
                 }
 
-                foreach (var container in Plugins)
+                PluginContainer[] snapshot;
+                lock (Plugins)
+                {
+                    snapshot = Plugins.ToArray();
+                }
+
+                foreach (var container in snapshot)
                 {
                     if (container.Metadata.Enable)
                     {

@@ -8,6 +8,7 @@
         private readonly AssemblyDependencyResolver resolver;
 
         public PluginAssemblyLoadContext(string assemblyLocation)
+            : base(isCollectible: true)
         {
             this.resolver = new AssemblyDependencyResolver(assemblyLocation);
         }
