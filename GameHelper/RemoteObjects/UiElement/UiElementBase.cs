@@ -21,6 +21,11 @@ namespace GameHelper.RemoteObjects.UiElement
         private Vector2 positionModifier;
         private bool show;
         private IntPtr[] childrenAddresses = Array.Empty<IntPtr>();
+        // F-136: cache of materialised UiElementBase children — lazily built by the
+        // this[int] indexer, invalidated on address change. Slots are null until
+        // first accessed. Eliminates the per-indexer-call new+UpdateData(true) hit
+        // that was O(N) per traversal in passive-skill-tree-sized trees.
+        private UiElementBase?[] childrenCache = Array.Empty<UiElementBase?>();
         private uint flags; // IsVisible and ShouldModifyPosition information
         private float localScaleMultiplier;
         private Vector2 relativePosition;
@@ -151,7 +156,17 @@ namespace GameHelper.RemoteObjects.UiElement
                     return null;
                 }
 
-                return new UiElementBase(this.childrenAddresses[i], this.parents);
+                // F-136: lazy-cache child UiElementBase. First access constructs and
+                // caches; subsequent calls return the cached instance. Cache slots
+                // are reset whenever UpdateData re-reads childrenAddresses.
+                var cached = this.childrenCache[i];
+                if (cached == null)
+                {
+                    cached = new UiElementBase(this.childrenAddresses[i], this.parents);
+                    this.childrenCache[i] = cached;
+                }
+
+                return cached;
             }
         }
 
@@ -194,6 +209,10 @@ namespace GameHelper.RemoteObjects.UiElement
             this.positionModifier = Vector2.Zero;
             this.show = false;
             this.childrenAddresses = Array.Empty<IntPtr>();
+            // F-136: rebuild cache slots to match the new childrenAddresses length.
+            // Existing materialised children are dropped; they'll be re-allocated
+            // lazily on next this[int] access if still needed.
+            this.childrenCache = new UiElementBase?[this.childrenAddresses.Length];
             this.flags = 0x00;
             this.localScaleMultiplier = 0x01;
             this.relativePosition = Vector2.Zero;
@@ -226,6 +245,10 @@ namespace GameHelper.RemoteObjects.UiElement
             this.parentAddress = data.ParentPtr;
             this.parents.AddIfNotExists(data.ParentPtr);
             this.childrenAddresses = Core.Process.Handle.ReadStdVector<IntPtr>(data.ChildrensPtr);
+            // F-136: rebuild cache slots to match the new childrenAddresses length.
+            // Existing materialised children are dropped; they'll be re-allocated
+            // lazily on next this[int] access if still needed.
+            this.childrenCache = new UiElementBase?[this.childrenAddresses.Length];
 
             this.positionModifier.X = data.PositionModifier.X;
             this.positionModifier.Y = data.PositionModifier.Y;
