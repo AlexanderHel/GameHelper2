@@ -533,7 +533,8 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                     }
                     else
                     {
-                        throw new Exception($"SubterrainHeightArray Length {arrayLength} less-than index {index}");
+                        Console.WriteLine($"[AreaInstance.GetSubTerrainHeight] OOR: len={arrayLength}, index={index} - returning 0 (audit F-138).");
+                        return 0;
                     }
             }
 #else

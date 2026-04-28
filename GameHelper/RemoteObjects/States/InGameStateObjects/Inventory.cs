@@ -179,10 +179,12 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                         var item = new Item(invItem.Item);
                         if (!string.IsNullOrEmpty(item.Path))
                         {
-                            if (!this.Items.TryAdd(invItemPtr, item))
-                            {
-                                throw new Exception("Failed to add item into the Inventory Item Dict.");
-                            }
+                            // TryAdd returns false when another parallel worker already inserted
+                            // this invItemPtr — legitimate race on duplicate pointers, not an
+                            // error. Drop the previously-thrown bare Exception (audit F-130)
+                            // which would otherwise propagate as AggregateException and kill
+                            // the OnTimeTick coroutine.
+                            this.Items.TryAdd(invItemPtr, item);
                         }
                     }
                 }
