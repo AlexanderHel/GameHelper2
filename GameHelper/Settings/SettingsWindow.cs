@@ -137,7 +137,10 @@ namespace GameHelper.Settings
         {
             ImGui.PushTextWrapPos(ImGui.GetContentRegionAvail().X);
             ImGui.TextColored(color, "This is free software, if you purchased a copy you have been scammed");
-            ImGui.TextColored(color, "Download from https://gitlab.com/arsenic2k/gamehelper2");
+            ImGui.TextColored(color, "Download from https://gitlab.com/bylafko/gamehelper2");
+            ImGui.TextColored(color, "Zero Day developer is Kronos");
+            ImGui.TextColored(color, "Offset updater is Arsenic, Nabeora, Lafko");
+            ImGui.TextColored(color, "Official GameHelper2 Discord is https://discord.gg/rnWsaYRQxb");
             ImGui.NewLine();
             ImGui.TextColored(Vector4.One, "Developer of this software is not responsible for " +
                               "any loss that may happen due to the usage of this software. Use this " +

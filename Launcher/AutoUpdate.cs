@@ -10,7 +10,7 @@
 
     public static class AutoUpdate
     {
-        private const string ReleasesApiUrl = "https://gitlab.com/api/v4/projects/arsenic2k%2FGameHelper2/releases";
+        private const string ReleasesApiUrl = "";
         
         private static readonly HttpClient HttpClient = new();
         private static string? extractedPath;
