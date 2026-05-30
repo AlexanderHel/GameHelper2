@@ -17,7 +17,6 @@ namespace GameHelper.RemoteObjects.UiElement
     public class LargeMapUiElement : MapUiElement
     {
         private readonly UiElementBase centerElement;
-        private readonly UiElementBase verticalCenterElement;
         private readonly UiElementBase visibilityElement;
         private readonly UiElementBase inverseVisibilityElement;
 
@@ -30,7 +29,6 @@ namespace GameHelper.RemoteObjects.UiElement
             : base(address, parents)
         {
             this.centerElement = new UiElementBase(IntPtr.Zero, parents);
-            this.verticalCenterElement = new UiElementBase(IntPtr.Zero, parents);
             this.visibilityElement = new UiElementBase(IntPtr.Zero, parents);
             this.inverseVisibilityElement = new UiElementBase(IntPtr.Zero, parents);
         }
@@ -47,13 +45,14 @@ namespace GameHelper.RemoteObjects.UiElement
         {
             get
             {
-                var center = this.centerElement.Position;
-                if (this.verticalCenterElement.Address == IntPtr.Zero)
-                {
-                    return center;
-                }
-
-                return new Vector2(center.X, this.verticalCenterElement.Position.Y);
+                // Horizontal center comes from the game's center UI element (its X is
+                // reliable). The game's separate vertical-center element offset isn't
+                // reliably known across patches (it currently duplicates the horizontal
+                // one, which reads Y=0), so derive the vertical center from the
+                // full-screen large map's own height instead: half the element height is
+                // the on-screen vertical center (e.g. 1080 at 2160p). This is
+                // resolution-independent and doesn't depend on a fragile UI offset.
+                return new Vector2(this.centerElement.Position.X, this.Size.Y / 2f);
             }
         }
 
@@ -83,11 +82,6 @@ namespace GameHelper.RemoteObjects.UiElement
         internal void SetCenterAddress(IntPtr value)
         {
             this.centerElement.Address = value;
-        }
-
-        internal void SetVerticalCenterAddress(IntPtr value)
-        {
-            this.verticalCenterElement.Address = value;
         }
 
         /// <inheritdoc />
@@ -121,11 +115,6 @@ namespace GameHelper.RemoteObjects.UiElement
                 this.centerElement.Address = IntPtr.Zero;
             }
 
-            if (this.verticalCenterElement != null)
-            {
-                this.verticalCenterElement.Address = IntPtr.Zero;
-            }
-
             if (this.visibilityElement != null)
             {
                 this.visibilityElement.Address = IntPtr.Zero;
@@ -146,7 +135,6 @@ namespace GameHelper.RemoteObjects.UiElement
             ImGui.Text($"Visibility Address {this.visibilityElement.Address.ToInt64():X}");
             ImGui.Text($"Inverse Visibility Address {this.inverseVisibilityElement.Address.ToInt64():X}");
             ImGui.Text($"Center Address {this.centerElement.Address.ToInt64():X}");
-            ImGui.Text($"Vertical Center Address {this.verticalCenterElement.Address.ToInt64():X}");
             ImGui.Text($"Center (without shift/default-shift) {this.Center}");
         }
     }

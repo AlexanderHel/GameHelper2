@@ -115,7 +115,6 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             this.LargeMap.SetVisibilityAddress(IntPtr.Zero);
             this.LargeMap.SetInverseVisibilityAddress(IntPtr.Zero);
             this.LargeMap.SetCenterAddress(IntPtr.Zero);
-            this.LargeMap.SetVerticalCenterAddress(IntPtr.Zero);
             this.ChatParent.Address = IntPtr.Zero;
             this.SkillTreeNodesUiElements.Clear();
         }
@@ -133,7 +132,6 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 this.LargeMap.SetVisibilityAddress(IntPtr.Zero);
                 this.LargeMap.SetInverseVisibilityAddress(data2.MiniMapPtr);
                 this.LargeMap.SetCenterAddress(data2.LargeMapPtr);
-                this.LargeMap.SetVerticalCenterAddress(IntPtr.Zero);
                 this.MiniMap.Address = data2.MiniMapPtr;
                 this.MiniMap.SetVisibilityAddress(data2.MiniMapPtr);
                 this.ChatParent.Address = IntPtr.Zero;
@@ -172,7 +170,6 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 this.LargeMap.SetVisibilityAddress(largeMapVisibilityAddress);
                 this.LargeMap.SetInverseVisibilityAddress(miniMapVisibilityAddress);
                 this.LargeMap.SetCenterAddress(data1.LargeMapCenterPtr);
-                this.LargeMap.SetVerticalCenterAddress(data1.LargeMapVerticalCenterPtr);
                 this.MiniMap.Address = miniMapAddress;
                 this.MiniMap.SetVisibilityAddress(miniMapVisibilityAddress);
                 this.ChatParent.Address = data1.ChatParentPtr;
