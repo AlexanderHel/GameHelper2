@@ -24,7 +24,13 @@ namespace Radar
         /// Multipler to apply to the Large Map icons
         /// so they display correctly on the screen.
         /// </summary>
-        public float LargeMapScaleMultiplier = 0.1738f;
+        public float LargeMapScaleMultiplier = 0.158f;
+
+        /// <summary>
+        /// Vertical screen-space offset applied to the large map overlay.
+        /// Negative values move the overlay up.
+        /// </summary>
+        public float LargeMapYOffset = -20.3f;
 
         /// <summary>
         /// Do not draw the Radar plugin stuff when game is in the background.

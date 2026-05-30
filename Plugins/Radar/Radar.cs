@@ -86,6 +86,8 @@ namespace Radar
                 "This slider has no impact on mini-map icons. For windowed-full-screen " +
                 "default value should be good enough. If you want to add precise value " +
                 "(e.g. 0.137345) press CTRL + LMB");
+            ImGui.DragFloat("Large Map Y Offset", ref this.Settings.LargeMapYOffset, 0.1f, -100f, 100f);
+            ImGuiHelper.ToolTip("Adjusts only the large map overlay vertically. Negative moves it up, positive moves it down.");
             ImGui.Checkbox("Hide Radar when in Hideout/Town", ref this.Settings.DrawWhenNotInHideoutOrTown);
             ImGui.Checkbox("Hide Radar when game is in the background", ref this.Settings.DrawWhenForeground);
             ImGui.Checkbox("Hide Radar when game is paused", ref this.Settings.DrawWhenNotPaused);
@@ -257,6 +259,7 @@ namespace Radar
             if (largeMap.IsVisible)
             {
                 var largeMapRealCenter = largeMap.Center + largeMap.Shift + largeMap.DefaultShift;
+                largeMapRealCenter.Y += this.Settings.LargeMapYOffset;
                 var largeMapModifiedZoom = this.Settings.LargeMapScaleMultiplier * largeMap.Zoom;
                 Helper.DiagonalLength = this.largeMapDiagonalLength;
                 Helper.Scale = largeMapModifiedZoom;
