@@ -69,18 +69,27 @@ namespace GameHelper.RemoteObjects.States
             this.CurrentAreaInstance.Address = data.AreaInstanceData;
             this.CurrentWorldInstance.Address = data.WorldData;
 
-            var uiRootStruct = reader.ReadMemory<UiRootStruct>(data.UiRootStructPtr);
-            this.uiRootAddress = uiRootStruct.UiRootPtr;
-
-            if (uiRootStruct.GameUiPtr == IntPtr.Zero)
+            if (data.UiRootStructPtr == IntPtr.Zero)
             {
-                Core.GHSettings.EnableControllerMode = true;
-                this.GameUi.Address = uiRootStruct.GameUiControllerPtr;
+                this.uiRootAddress = data.GameUiPtr;
+                Core.GHSettings.EnableControllerMode = false;
+                this.GameUi.Address = data.GameUiPtr;
             }
             else
             {
-                Core.GHSettings.EnableControllerMode = false;
-                this.GameUi.Address = uiRootStruct.GameUiPtr;
+                var uiRootStruct = reader.ReadMemory<UiRootStruct>(data.UiRootStructPtr);
+                this.uiRootAddress = uiRootStruct.UiRootPtr;
+
+                if (uiRootStruct.GameUiPtr == IntPtr.Zero)
+                {
+                    Core.GHSettings.EnableControllerMode = true;
+                    this.GameUi.Address = uiRootStruct.GameUiControllerPtr;
+                }
+                else
+                {
+                    Core.GHSettings.EnableControllerMode = false;
+                    this.GameUi.Address = uiRootStruct.GameUiPtr;
+                }
             }
         }
 

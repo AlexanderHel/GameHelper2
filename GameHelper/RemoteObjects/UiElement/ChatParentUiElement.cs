@@ -1,6 +1,7 @@
 ﻿namespace GameHelper.RemoteObjects.UiElement
 {
     using GameHelper.Cache;
+    using GameOffsets.Objects.UiElement;
     using ImGuiNET;
     using System;
 
@@ -17,7 +18,19 @@
         internal ChatParentUiElement(IntPtr address, UiElementParents parents) :
             base(address, parents) {}
 
-        public bool IsChatActive => this.backgroundColor.W * 255 >= 0x8C;
+        public bool IsChatActive
+        {
+            get
+            {
+                if (this.Address == IntPtr.Zero)
+                {
+                    return false;
+                }
+
+                var data = Core.Process.Handle.ReadMemory<UiElementBaseOffset>(this.Address);
+                return (data.Flags & 0x40000) != 0 || this.backgroundColor.W * 255 >= 0x8C;
+            }
+        }
 
         /// <summary>
         ///     Converts the <see cref="ChatParentUiElement" /> class data to ImGui.

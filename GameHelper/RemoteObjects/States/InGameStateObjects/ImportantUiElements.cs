@@ -110,7 +110,12 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         {
             this.passiveskilltreenodes.Address = IntPtr.Zero;
             this.MiniMap.Address = IntPtr.Zero;
+            this.MiniMap.SetVisibilityAddress(IntPtr.Zero);
             this.LargeMap.Address = IntPtr.Zero;
+            this.LargeMap.SetVisibilityAddress(IntPtr.Zero);
+            this.LargeMap.SetInverseVisibilityAddress(IntPtr.Zero);
+            this.LargeMap.SetCenterAddress(IntPtr.Zero);
+            this.LargeMap.SetVerticalCenterAddress(IntPtr.Zero);
             this.ChatParent.Address = IntPtr.Zero;
             this.SkillTreeNodesUiElements.Clear();
         }
@@ -123,21 +128,53 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             var data1 = reader.ReadMemory<ImportantUiElementsOffsets>(Core.GHSettings.IsTaiwanClient ? this.Address - 0x08 : this.Address);
             if (Core.GHSettings.EnableControllerMode)
             {
-                var data2 = reader.ReadMemory<MapParentStruct>(data1.ControllerModeMapParentPtr);
+                var data2 = reader.ReadMemory<ControllerModeMapParentStruct>(data1.ControllerModeMapParentPtr);
                 this.LargeMap.Address = data2.LargeMapPtr;
+                this.LargeMap.SetVisibilityAddress(IntPtr.Zero);
+                this.LargeMap.SetInverseVisibilityAddress(data2.MiniMapPtr);
+                this.LargeMap.SetCenterAddress(data2.LargeMapPtr);
+                this.LargeMap.SetVerticalCenterAddress(IntPtr.Zero);
                 this.MiniMap.Address = data2.MiniMapPtr;
+                this.MiniMap.SetVisibilityAddress(data2.MiniMapPtr);
                 this.ChatParent.Address = IntPtr.Zero;
                 this.passiveskilltreenodes.Address = IntPtr.Zero;
             }
             else
             {
-                var data2 = reader.ReadMemory<MapParentStruct>(data1.MapParentPtr);
                 var data3 = reader.ReadMemory<UiElementBaseOffset>(data1.PassiveSkillTreePanel);
                 var data4 = reader.ReadMemory<IntPtr>(data3.ChildrensPtr.First + (PassiveSkillTreeStruct.ChildNumber));
+                var miniMapVisibilityAddress = data1.MiniMapParentPtr;
+                var miniMapAddress = miniMapVisibilityAddress;
+                var largeMapVisibilityAddress = IntPtr.Zero;
+                var miniMapRootData = reader.ReadMemory<UiElementBaseOffset>(data1.MiniMapParentPtr);
+                var miniMapRootChildren = reader.ReadStdVector<IntPtr>(miniMapRootData.ChildrensPtr);
+                if (miniMapRootChildren.Length > 0)
+                {
+                    largeMapVisibilityAddress = miniMapRootChildren[0];
+                }
+
+                if (miniMapRootChildren.Length > 1 && miniMapRootChildren[1] != IntPtr.Zero)
+                {
+                    miniMapVisibilityAddress = miniMapRootChildren[1];
+                    miniMapAddress = miniMapVisibilityAddress;
+
+                    var miniMapParentData = reader.ReadMemory<UiElementBaseOffset>(miniMapVisibilityAddress);
+                    var miniMapChildren = reader.ReadStdVector<IntPtr>(miniMapParentData.ChildrensPtr);
+                    if (miniMapChildren.Length > 0 && miniMapChildren[0] != IntPtr.Zero)
+                    {
+                        miniMapAddress = miniMapChildren[0];
+                    }
+                }
+
                 // This won't throw an exception (i.e. this address is not a UIElement) because (lucky us)
                 // game UiElement garbage collection is not instant. if this ever changes, put try catch on it.
-                this.LargeMap.Address = data2.LargeMapPtr;
-                this.MiniMap.Address = data2.MiniMapPtr;
+                this.LargeMap.Address = data1.LargeMapParentPtr;
+                this.LargeMap.SetVisibilityAddress(largeMapVisibilityAddress);
+                this.LargeMap.SetInverseVisibilityAddress(miniMapVisibilityAddress);
+                this.LargeMap.SetCenterAddress(data1.LargeMapCenterPtr);
+                this.LargeMap.SetVerticalCenterAddress(data1.LargeMapVerticalCenterPtr);
+                this.MiniMap.Address = miniMapAddress;
+                this.MiniMap.SetVisibilityAddress(miniMapVisibilityAddress);
                 this.ChatParent.Address = data1.ChatParentPtr;
                 this.passiveskilltreenodes.Address = data4;
                 this.updatePassiveSkillTreeData();
