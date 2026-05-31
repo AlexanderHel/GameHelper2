@@ -95,6 +95,14 @@ namespace Radar
             ImGuiHelper.ToolTip("Adjusts only the large map overlay horizontally. Negative moves it left, positive moves it right.");
             ImGui.DragFloat("Large Map Y Offset", ref this.Settings.LargeMapYOffset, 0.1f);
             ImGuiHelper.ToolTip("Adjusts only the large map overlay vertically. Negative moves it up, positive moves it down.");
+            ImGui.DragFloat("Mini Map Icon Scale", ref this.Settings.MiniMapScaleMultiplier, 0.005f, 0.01f, 2f, "%.3f");
+            ImGuiHelper.ToolTip("Scales the size of icons drawn on the mini-map only. " +
+                "The mini-map draws icons much larger than the large map by default; " +
+                "turn this down to shrink them.");
+            ImGui.DragFloat("Mini Map Zoom", ref this.Settings.MiniMapZoomMultiplier, 0.005f, 0.01f, 3f, "%.3f");
+            ImGuiHelper.ToolTip("Controls how far mini-map icons sit from your character " +
+                "(the mini-map's effective zoom). If enemies appear too far out in all " +
+                "directions, turn this down; too clustered, turn it up. Does not affect icon size.");
             ImGui.Checkbox("Hide Radar when in Hideout/Town", ref this.Settings.DrawWhenNotInHideoutOrTown);
             ImGui.Checkbox("Hide Radar when game is in the background", ref this.Settings.DrawWhenForeground);
             ImGui.Checkbox("Hide Radar when game is paused", ref this.Settings.DrawWhenNotPaused);
@@ -292,7 +300,7 @@ namespace Radar
             if (miniMap.IsVisible)
             {
                 Helper.DiagonalLength = this.miniMapDiagonalLength;
-                Helper.Scale = miniMap.Zoom;
+                Helper.Scale = miniMap.Zoom * this.Settings.MiniMapZoomMultiplier;
                 var miniMapCenter = miniMap.Position +
                     (miniMap.Size / 2) +
                     miniMap.DefaultShift +
@@ -303,8 +311,9 @@ namespace Radar
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
                 ImGui.Begin("###minimapRadar", ImGuiHelper.TransparentWindowFlags);
                 ImGui.PopStyleVar();
-                this.DrawTgtIcons(miniMapCenter, miniMap.Zoom);
-                this.DrawMapIcons(miniMapCenter, miniMap.Zoom);
+                var miniMapIconScale = miniMap.Zoom * this.Settings.MiniMapScaleMultiplier;
+                this.DrawTgtIcons(miniMapCenter, miniMapIconScale);
+                this.DrawMapIcons(miniMapCenter, miniMapIconScale);
                 ImGui.End();
             }
         }
