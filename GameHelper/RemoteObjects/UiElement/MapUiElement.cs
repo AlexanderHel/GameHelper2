@@ -17,7 +17,8 @@ namespace GameHelper.RemoteObjects.UiElement
     {
         protected Vector2 defaultShift = Vector2.Zero;
         protected Vector2 shift = Vector2.Zero;
-        private IntPtr visibilityAddress;
+        protected IntPtr mapDataAddress;
+        protected IntPtr visibilityAddress;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="MapUiElement" /> class.
@@ -70,6 +71,9 @@ namespace GameHelper.RemoteObjects.UiElement
         {
             base.ToImGui();
             ImGui.Text($"Visibility Address {this.visibilityAddress.ToInt64():X}");
+            ImGui.Text($"Map Data Address {this.mapDataAddress.ToInt64():X}");
+            var liveStateAddress = this.GetLiveMapStateAddress();
+            ImGui.Text($"Live Map State Address {liveStateAddress.ToInt64():X}");
             ImGui.Text($"Shift {this.shift}");
             ImGui.Text($"Default Shift {this.defaultShift}");
             ImGui.Text($"Zoom {this.Zoom}");
@@ -82,6 +86,7 @@ namespace GameHelper.RemoteObjects.UiElement
             this.shift = default;
             this.defaultShift = default;
             this.Zoom = 0.5f;
+            this.mapDataAddress = IntPtr.Zero;
             this.visibilityAddress = IntPtr.Zero;
         }
 
@@ -89,6 +94,7 @@ namespace GameHelper.RemoteObjects.UiElement
         protected override void UpdateData(bool hasAddressChanged)
         {
             var data = Core.Process.Handle.ReadMemory<MapUiElementOffset>(this.Address);
+            this.mapDataAddress = this.Address;
             this.UpdateData(data.UiElementBase, hasAddressChanged);
             this.UpdateMapData(data);
 
@@ -96,26 +102,24 @@ namespace GameHelper.RemoteObjects.UiElement
 
         protected void UpdateMapData(MapUiElementOffset data)
         {
-            // The Shift/DefaultShift field offsets can drift after a game patch and
-            // read garbage (NaN/Infinity or absurd magnitudes). A bad value here gets
-            // added straight into the map's draw origin, throwing the whole overlay
-            // far off-screen. Reject implausible values so the map stays drawable;
-            // the Radar X/Y offset sliders handle the small, real corrections.
-            this.shift = SanitizeShift(data.Shift.X, data.Shift.Y);
-            this.defaultShift = SanitizeShift(data.DefaultShift.X, data.DefaultShift.Y);
-            this.Zoom = data.Zoom;
+            var liveData = this.ReadLiveMapStateData();
+            this.shift = new Vector2(liveData.Shift.X, liveData.Shift.Y);
+            this.defaultShift = new Vector2(liveData.DefaultShift.X, liveData.DefaultShift.Y);
+            this.Zoom = liveData.Zoom;
         }
 
-        private static Vector2 SanitizeShift(float x, float y)
+        protected virtual IntPtr GetLiveMapStateAddress()
         {
-            // A few screen-widths of panning is plausible; anything beyond is a misread.
-            const float MaxSaneShift = 50000f;
-            return new Vector2(SaneOrZero(x, MaxSaneShift), SaneOrZero(y, MaxSaneShift));
+            return this.visibilityAddress;
         }
 
-        private static float SaneOrZero(float value, float max)
+        protected LiveMapStateOffset ReadLiveMapStateData()
         {
-            return float.IsFinite(value) && Math.Abs(value) <= max ? value : 0f;
+            var liveMapStateAddress = this.GetLiveMapStateAddress();
+            return liveMapStateAddress == IntPtr.Zero
+                ? default
+                : Core.Process.Handle.ReadMemory<LiveMapStateOffset>(liveMapStateAddress);
         }
+
     }
 }

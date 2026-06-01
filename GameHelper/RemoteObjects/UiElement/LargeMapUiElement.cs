@@ -41,20 +41,7 @@ namespace GameHelper.RemoteObjects.UiElement
         /// <summary>
         ///     Gets the center of the map.
         /// </summary>
-        public Vector2 Center
-        {
-            get
-            {
-                // Horizontal center comes from the game's center UI element (its X is
-                // reliable). The game's separate vertical-center element offset isn't
-                // reliably known across patches (it currently duplicates the horizontal
-                // one, which reads Y=0), so derive the vertical center from the
-                // full-screen large map's own height instead: half the element height is
-                // the on-screen vertical center (e.g. 1080 at 2160p). This is
-                // resolution-independent and doesn't depend on a fragile UI offset.
-                return new Vector2(this.centerElement.Position.X, this.Size.Y / 2f);
-            }
-        }
+        public Vector2 Center => new(this.centerElement.Position.X, this.Size.Y / 2f);
 
         public override bool IsVisible
         {
@@ -84,6 +71,11 @@ namespace GameHelper.RemoteObjects.UiElement
             this.centerElement.Address = value;
         }
 
+        protected override IntPtr GetLiveMapStateAddress()
+        {
+            return this.inverseVisibilityElement.Address;
+        }
+
         /// <inheritdoc />
         protected override void UpdateData(bool hasAddressChanged)
         {
@@ -99,10 +91,12 @@ namespace GameHelper.RemoteObjects.UiElement
 
             if (mapDataAddress == IntPtr.Zero)
             {
+                this.mapDataAddress = this.Address;
                 this.UpdateMapData(data);
                 return;
             }
 
+            this.mapDataAddress = mapDataAddress;
             this.UpdateMapData(reader.ReadMemory<MapUiElementOffset>(mapDataAddress));
         }
 
@@ -135,6 +129,8 @@ namespace GameHelper.RemoteObjects.UiElement
             ImGui.Text($"Visibility Address {this.visibilityElement.Address.ToInt64():X}");
             ImGui.Text($"Inverse Visibility Address {this.inverseVisibilityElement.Address.ToInt64():X}");
             ImGui.Text($"Center Address {this.centerElement.Address.ToInt64():X}");
+            var viewportHalfSize = this.ReadLiveMapStateData().ViewportHalfSize;
+            ImGui.Text($"Viewport Half Size <{viewportHalfSize.X}, {viewportHalfSize.Y}>");
             ImGui.Text($"Center (without shift/default-shift) {this.Center}");
         }
     }
