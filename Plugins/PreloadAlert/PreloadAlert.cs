@@ -119,7 +119,7 @@ namespace PreloadAlert
             {
                 return;
             }
-            if (Core.States.InGameStateObject.GameUi.SkillTreeNodesUiElements.Count > 0)
+            if (Core.States.InGameStateObject.GameUi.IsPassiveSkillTreeVisible)
             {
                 return;
             }
