@@ -23,43 +23,8 @@ namespace Radar
         /// <summary>
         /// Multipler to apply to the Large Map icons
         /// so they display correctly on the screen.
-        /// Stored 100x larger than the value actually used (e.g. 15.8 here == 0.158 effective)
-        /// so the UI slider can show/edit enough precision; divided by 100 at the use site.
         /// </summary>
-        public float LargeMapScaleMultiplier = 6.44f;
-
-        /// <summary>
-        /// Horizontal screen-space offset applied to the mini-map overlay.
-        /// Negative values move the overlay left.
-        /// </summary>
-        public float MiniMapXOffset = 0f;
-
-        /// <summary>
-        /// Multiplier applied to the mini-map icon size (on top of the mini-map zoom).
-        /// The mini-map draws icons much larger than the large map by default, so this
-        /// knob scales them down independently. Default ~0.32 roughly matches large-map icon size.
-        /// </summary>
-        public float MiniMapScaleMultiplier = 1f;
-
-        /// <summary>
-        /// Multiplier applied to the mini-map position zoom (Helper.Scale), controlling how
-        /// far icons are placed from the player. The mini-map has no calibration factor by
-        /// default (uses raw zoom), which spreads icons too far. Turn down to pull them in.
-        /// This only affects icon positions, not icon size.
-        /// </summary>
-        public float MiniMapZoomMultiplier = 1f;
-
-        /// <summary>
-        /// Horizontal screen-space offset applied to the large map overlay.
-        /// Negative values move the overlay left.
-        /// </summary>
-        public float LargeMapXOffset = -3.5f;
-
-        /// <summary>
-        /// Vertical screen-space offset applied to the large map overlay.
-        /// Negative values move the overlay up.
-        /// </summary>
-        public float LargeMapYOffset = -20.3f;
+        public float LargeMapScaleMultiplier = 0.1738f;
 
         /// <summary>
         /// Do not draw the Radar plugin stuff when game is in the background.
@@ -186,12 +151,6 @@ namespace Radar
         public Dictionary<string, IconPicker> TempleIcons = new();
 
         /// <summary>
-        /// Icons to display on the map. Runestone includes the Campaign Runestone
-        /// terrain tiles (all terrain variants combined under a single "Runestones" entry).
-        /// </summary>
-        public Dictionary<string, IconPicker> RunestoneIcons = new();
-
-        /// <summary>
         /// Icons to display on the map. Boss arena icons for endgame maps.
         /// </summary>
         public Dictionary<string, IconPicker> BossIcons = new();
@@ -235,12 +194,6 @@ namespace Radar
         /// </summary>
         [JsonIgnore]
         public const int BossCheckpointGroup = 102;
-
-        /// <summary>
-        /// The group number used for Rune encounter controllers in SpecialMiscObjPaths.
-        /// </summary>
-        [JsonIgnore]
-        public const int RuneEncounterGroup = 103;
 
         /// <summary>
         /// Maps mod name substrings to display names used as keys in ExpeditionRemnantIcons.
@@ -403,7 +356,6 @@ namespace Radar
             this.AddDefaultExpeditionMarkerIcons(basicIconPathName);
             this.AddDefaultExpeditionRemnantIcons(basicIconPathName);
             this.AddDefaultTempleIcons(basicIconPathName);
-            this.AddDefaultRunestoneIcons(basicIconPathName);
             this.AddDefaultBossIcons(basicIconPathName);
         }
 
@@ -464,12 +416,6 @@ namespace Radar
         private void AddDefaultTempleIcons(string iconPathName)
         {
             this.TempleIcons.TryAdd("Vaal Ruins", new IconPicker(iconPathName, 9, 2, 75, IconSize));
-        }
-
-        private void AddDefaultRunestoneIcons(string iconPathName)
-        {
-            this.RunestoneIcons.TryAdd("Runestones", new IconPicker(iconPathName, 13, 1, 75, IconSize));
-            this.RunestoneIcons.TryAdd("Rune Encounter", new IconPicker(iconPathName, 9, 2, 75, IconSize));
         }
 
         private void AddDefaultExpeditionMarkerIcons(string iconPathName)

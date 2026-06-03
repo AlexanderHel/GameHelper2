@@ -212,7 +212,6 @@ namespace GameHelper.Settings
             ("Metadata/MiscellaneousObjects/Expedition/ExpeditionRelic", 101),
             ("Metadata/Terrain/Gallows/Leagues/Expedition/Objects/Expedition", 100),
             ("Metadata/MiscellaneousObjects/Checkpoints/Checkpoint_Endgame_Boss", 102),
-            ("Metadata/Monsters/LeagueExpeditionNew/RuneEncounterController", 103),
         };
 
         /// <summary>
@@ -223,10 +222,6 @@ namespace GameHelper.Settings
         {
             "Metadata/Monsters/LeagueIncursionNew/Garrison/VaalTrainingDummy",
             "Metadata/Monsters/PerennialKingStage2/PerennialKingCorpseFriend",
-            "Metadata/Monsters/MarakethSamdDjinn/SandDjinn",
-            "Metadata/Monsters/MarakethWaterDjinn/WaterDjinn",
-            "Metadata/Monsters/MarakethTimeDjinn/FireDjinn",
-            "Metadata/Monsters/Monsters/LivingLightningPlayerSummoned",
         };
 
         /// <summary>

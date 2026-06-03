@@ -86,18 +86,11 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         /// </summary>
         public List<SkillTreeNodeUiElement> SkillTreeNodesUiElements { get; }
 
-        /// <summary>
-        ///     Gets a value indicating whether the passive skill tree panel is visible.
-        /// </summary>
-        public bool IsPassiveSkillTreeVisible { get; private set; }
-
         internal override void ToImGui()
         {
             this.displayParentsCache();
             base.ToImGui();
-            ImGui.Text($"Passive Skill Tree Panel Visible: {this.IsPassiveSkillTreeVisible}");
-            ImGui.Text($"Passive Skill Tree Node Parent Address: {this.passiveskilltreenodes.Address.ToInt64():X}");
-            ImGui.Text($"Passive Skill Tree Node Parent Children: {this.passiveskilltreenodes.TotalChildrens}");
+            ImGui.Text($"Passive Skill Tree Panel Visible: {this.passiveskilltreenodes.IsVisible}");
             ImGui.Text($"Total Skill Tree Nodes: {this.SkillTreeNodesUiElements.Count}");
             if (ImGui.TreeNode("Skill Tree Nodes"))
             {
@@ -117,13 +110,8 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         {
             this.passiveskilltreenodes.Address = IntPtr.Zero;
             this.MiniMap.Address = IntPtr.Zero;
-            this.MiniMap.SetVisibilityAddress(IntPtr.Zero);
             this.LargeMap.Address = IntPtr.Zero;
-            this.LargeMap.SetVisibilityAddress(IntPtr.Zero);
-            this.LargeMap.SetInverseVisibilityAddress(IntPtr.Zero);
-            this.LargeMap.SetCenterAddress(IntPtr.Zero);
             this.ChatParent.Address = IntPtr.Zero;
-            this.IsPassiveSkillTreeVisible = false;
             this.SkillTreeNodesUiElements.Clear();
         }
 
@@ -135,45 +123,21 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             var data1 = reader.ReadMemory<ImportantUiElementsOffsets>(Core.GHSettings.IsTaiwanClient ? this.Address - 0x08 : this.Address);
             if (Core.GHSettings.EnableControllerMode)
             {
-                var data2 = reader.ReadMemory<ControllerModeMapParentStruct>(data1.ControllerModeMapParentPtr);
+                var data2 = reader.ReadMemory<MapParentStruct>(data1.ControllerModeMapParentPtr);
                 this.LargeMap.Address = data2.LargeMapPtr;
-                this.LargeMap.SetVisibilityAddress(IntPtr.Zero);
-                this.LargeMap.SetInverseVisibilityAddress(data2.MiniMapPtr);
-                this.LargeMap.SetCenterAddress(data2.LargeMapPtr);
                 this.MiniMap.Address = data2.MiniMapPtr;
-                this.MiniMap.SetVisibilityAddress(data2.MiniMapPtr);
                 this.ChatParent.Address = IntPtr.Zero;
                 this.passiveskilltreenodes.Address = IntPtr.Zero;
-                this.IsPassiveSkillTreeVisible = false;
-                this.SkillTreeNodesUiElements.Clear();
             }
             else
             {
+                var data2 = reader.ReadMemory<MapParentStruct>(data1.MapParentPtr);
                 var data3 = reader.ReadMemory<UiElementBaseOffset>(data1.PassiveSkillTreePanel);
                 var data4 = reader.ReadMemory<IntPtr>(data3.ChildrensPtr.First + (PassiveSkillTreeStruct.ChildNumber));
-                var mapParent = reader.ReadMemory<MapParentStruct>(data1.MapParentPtr);
-                var largeMapVisibilityAddress = mapParent.LargeMapPtr;
-                var miniMapVisibilityAddress = mapParent.MiniMapPtr;
-                var miniMapAddress = miniMapVisibilityAddress;
-
-                if (miniMapVisibilityAddress != IntPtr.Zero)
-                {
-                    var miniMapParentData = reader.ReadMemory<UiElementBaseOffset>(miniMapVisibilityAddress);
-                    var miniMapChildren = reader.ReadStdVector<IntPtr>(miniMapParentData.ChildrensPtr);
-                    if (miniMapChildren.Length > 0 && miniMapChildren[0] != IntPtr.Zero)
-                    {
-                        miniMapAddress = miniMapChildren[0];
-                    }
-                }
-
                 // This won't throw an exception (i.e. this address is not a UIElement) because (lucky us)
                 // game UiElement garbage collection is not instant. if this ever changes, put try catch on it.
-                this.LargeMap.Address = data1.LargeMapParentPtr;
-                this.LargeMap.SetVisibilityAddress(largeMapVisibilityAddress);
-                this.LargeMap.SetInverseVisibilityAddress(miniMapVisibilityAddress);
-                this.LargeMap.SetCenterAddress(data1.LargeMapCenterPtr);
-                this.MiniMap.Address = miniMapAddress;
-                this.MiniMap.SetVisibilityAddress(miniMapVisibilityAddress);
+                this.LargeMap.Address = data2.LargeMapPtr;
+                this.MiniMap.Address = data2.MiniMapPtr;
                 this.ChatParent.Address = data1.ChatParentPtr;
                 this.passiveskilltreenodes.Address = data4;
                 this.updatePassiveSkillTreeData();
@@ -182,8 +146,14 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
 
         private void updatePassiveSkillTreeData()
         {
-            this.IsPassiveSkillTreeVisible = this.passiveskilltreenodes.IsVisible;
-            this.ClearSkillNodes();
+            if (this.passiveskilltreenodes.IsVisible)
+            {
+                this.AddOrUpdateSkillNodes();
+            }
+            else
+            {
+                this.ClearSkillNodes();
+            }
         }
 
         private void ClearSkillNodes()

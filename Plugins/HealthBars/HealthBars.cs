@@ -183,7 +183,7 @@ namespace HealthBars
                 return;
             }
 
-            if (Core.States.InGameStateObject.GameUi.IsPassiveSkillTreeVisible)
+            if (Core.States.InGameStateObject.GameUi.SkillTreeNodesUiElements.Count > 0)
             {
                 return;
             }

@@ -182,8 +182,7 @@ namespace GameHelper.RemoteObjects.Components
             for (var i = 0; i < activeSkills.Length; i++)
             {
                 var skillDetails = reader.ReadMemory<ActiveSkillDetails>(activeSkills[i].ActiveSkillPtr);
-                if (skillDetails.GrantedEffectsPerLevelDatRow == IntPtr.Zero ||
-                    (skillDetails.UnknownIdAndEquipmentInfo >> 0x10) < 0x8000)
+                if (skillDetails.GrantedEffectsPerLevelDatRow == IntPtr.Zero)
                 {
                     // No usecase for these skills.
                     // this.ActiveSkills[i.ToString()] = skillDetails;
@@ -193,7 +192,11 @@ namespace GameHelper.RemoteObjects.Components
                     (var name, skillDetails.ActiveSkillsDatPtr) = ((string, IntPtr))Core.GgpkObjectCache.
                         AddOrGetExisting(skillDetails.GrantedEffectsPerLevelDatRow, (key) =>
                         {
-                            return (reader.ReadUnicodeString(reader.ReadMemory<IntPtr>(key)), key);
+                            return (reader.ReadUnicodeString(
+                                reader.ReadMemory<IntPtr>(reader.ReadMemory<IntPtr>(key))),
+                                reader.ReadMemory<GrantedEffectsDatOffset>(
+                                    reader.ReadMemory<GrantedEffectsPerLevelDatOffset>(
+                                        key).GrantedEffectDatPtr).ActiveSkillDatPtr);
                         });
 
                     // skillDetails.CurrentVaalSouls = -1;

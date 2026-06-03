@@ -15,10 +15,8 @@ namespace GameHelper.RemoteObjects.UiElement
     /// </summary>
     public class MapUiElement : UiElementBase
     {
-        protected Vector2 defaultShift = Vector2.Zero;
-        protected Vector2 shift = Vector2.Zero;
-        protected IntPtr mapDataAddress;
-        protected IntPtr visibilityAddress;
+        private Vector2 defaultShift = Vector2.Zero;
+        private Vector2 shift = Vector2.Zero;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="MapUiElement" /> class.
@@ -42,27 +40,7 @@ namespace GameHelper.RemoteObjects.UiElement
         ///     Gets the value indicating amount of zoom in the Map.
         ///     Normally values are between 0.5f  - 1.5f.
         /// </summary>
-        public float Zoom { get; protected set; } = 0.5f;
-
-        /// <inheritdoc />
-        public override bool IsVisible
-        {
-            get
-            {
-                if (this.visibilityAddress == IntPtr.Zero)
-                {
-                    return base.IsVisible;
-                }
-
-                var data = Core.Process.Handle.ReadMemory<UiElementBaseOffset>(this.visibilityAddress);
-                return UiElementBaseFuncs.IsVisibleChecker(data.Flags);
-            }
-        }
-
-        internal virtual void SetVisibilityAddress(IntPtr value)
-        {
-            this.visibilityAddress = value;
-        }
+        public float Zoom { get; private set; } = 0.5f;
 
         /// <summary>
         ///     Converts the <see cref="LargeMapUiElement" /> class data to ImGui.
@@ -70,10 +48,6 @@ namespace GameHelper.RemoteObjects.UiElement
         internal override void ToImGui()
         {
             base.ToImGui();
-            ImGui.Text($"Visibility Address {this.visibilityAddress.ToInt64():X}");
-            ImGui.Text($"Map Data Address {this.mapDataAddress.ToInt64():X}");
-            var liveStateAddress = this.GetLiveMapStateAddress();
-            ImGui.Text($"Live Map State Address {liveStateAddress.ToInt64():X}");
             ImGui.Text($"Shift {this.shift}");
             ImGui.Text($"Default Shift {this.defaultShift}");
             ImGui.Text($"Zoom {this.Zoom}");
@@ -86,40 +60,21 @@ namespace GameHelper.RemoteObjects.UiElement
             this.shift = default;
             this.defaultShift = default;
             this.Zoom = 0.5f;
-            this.mapDataAddress = IntPtr.Zero;
-            this.visibilityAddress = IntPtr.Zero;
         }
 
         /// <inheritdoc />
         protected override void UpdateData(bool hasAddressChanged)
         {
             var data = Core.Process.Handle.ReadMemory<MapUiElementOffset>(this.Address);
-            this.mapDataAddress = this.Address;
             this.UpdateData(data.UiElementBase, hasAddressChanged);
-            this.UpdateMapData(data);
+            this.shift.X = data.Shift.X;
+            this.shift.Y = data.Shift.Y;
+
+            this.defaultShift.X = data.DefaultShift.X;
+            this.defaultShift.Y = data.DefaultShift.Y;
+
+            this.Zoom = data.Zoom;
 
         }
-
-        protected void UpdateMapData(MapUiElementOffset data)
-        {
-            var liveData = this.ReadLiveMapStateData();
-            this.shift = new Vector2(liveData.Shift.X, liveData.Shift.Y);
-            this.defaultShift = new Vector2(liveData.DefaultShift.X, liveData.DefaultShift.Y);
-            this.Zoom = liveData.Zoom;
-        }
-
-        protected virtual IntPtr GetLiveMapStateAddress()
-        {
-            return this.visibilityAddress;
-        }
-
-        protected LiveMapStateOffset ReadLiveMapStateData()
-        {
-            var liveMapStateAddress = this.GetLiveMapStateAddress();
-            return liveMapStateAddress == IntPtr.Zero
-                ? default
-                : Core.Process.Handle.ReadMemory<LiveMapStateOffset>(liveMapStateAddress);
-        }
-
     }
 }

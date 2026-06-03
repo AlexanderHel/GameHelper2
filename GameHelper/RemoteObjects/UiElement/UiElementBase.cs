@@ -26,7 +26,7 @@ namespace GameHelper.RemoteObjects.UiElement
         // first accessed. Eliminates the per-indexer-call new+UpdateData(true) hit
         // that was O(N) per traversal in passive-skill-tree-sized trees.
         private UiElementBase?[] childrenCache = Array.Empty<UiElementBase?>();
-        protected uint flags; // IsVisible and ShouldModifyPosition information
+        private uint flags; // IsVisible and ShouldModifyPosition information
         private float localScaleMultiplier;
         private Vector2 relativePosition;
         private Vector2 unScaledSize; // Size before applying the scale multiplier.
@@ -96,7 +96,7 @@ namespace GameHelper.RemoteObjects.UiElement
         /// <summary>
         ///     Gets a value indicating whether the Ui Element is visible or not.
         /// </summary>
-        public virtual bool IsVisible
+        public bool IsVisible
         {
             get
             {

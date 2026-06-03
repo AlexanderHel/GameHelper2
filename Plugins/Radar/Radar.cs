@@ -32,26 +32,6 @@ namespace Radar
     {
         private const string TempleTgtPrefix = "Metadata/Terrain/Leagues/Incursion/Tiles/Features/Waygates/WaygateDevice";
 
-        // Radar scale baseline, calibrated so that LargeMapScaleMultiplier = 1.0
-        // produces correct icon placement at the game's base resolution.
-        // Originally 1.35; rescaled by ×6.95 (2026-06 calibration with live
-        // Shift/DefaultShift and height-normalised diagonal).
-        private const float LegacyRadarZoomBaseline = 9.3825f;
-
-        // Small horizontal bias the game applies to map-rendered icons vs the
-        // UiElement centre.
-        private const float MapXBias = -4f;
-        private const float MiniMapXBias = -7.8f;
-
-        // Baseline scale / zoom values for the minimap, calibrated so the
-        // user-facing sliders default to 1.0.
-        private const float MiniMapScaleBaseline = 0.045f;
-        private const float MiniMapZoomBaseline = 0.04f;
-
-        // All campaign rune terrain tiles (e.g. GrimTangle_Runestones, and other
-        // terrain variants) live under this folder; matching the prefix combines them all.
-        private const string RunestoneTgtPrefix = "Metadata/Terrain/Leagues/Expedition/Tiles/CampaignRunes/";
-
         private readonly string delveChestStarting = "Metadata/Chests/DelveChests/";
         private readonly Dictionary<uint, string> delveChestCache = new();
 
@@ -95,7 +75,7 @@ namespace Radar
         {
             ImGui.TextWrapped("If your mini/large map icon are not working/visible. Open this " +
                 "setting window, click anywhere on it and then hide this setting window. It will fix the issue.");
-            ImGui.DragFloat("Large Map Fix", ref this.Settings.LargeMapScaleMultiplier, 0.01f, 1f, 30f, "%.4f");
+            ImGui.DragFloat("Large Map Fix", ref this.Settings.LargeMapScaleMultiplier, 0.001f, 0.01f, 0.3f);
             ImGuiHelper.ToolTip("This slider is for fixing large map (icons) offset. " +
                 "You have to use it if you feel that LargeMap Icons " +
                 "are moving while your player is moving. You only have " +
@@ -105,22 +85,7 @@ namespace Radar
                 "what resolution you use and what value works best for you. " +
                 "This slider has no impact on mini-map icons. For windowed-full-screen " +
                 "default value should be good enough. If you want to add precise value " +
-                "(e.g. 13.7345) press CTRL + LMB. NOTE: this value is 100x the internally " +
-                "applied scale (e.g. 15.8 here == 0.158 effective).");
-            ImGui.DragFloat("Large Map X Offset", ref this.Settings.LargeMapXOffset, 0.1f);
-            ImGuiHelper.ToolTip("Adjusts only the large map overlay horizontally. Negative moves it left, positive moves it right.");
-            ImGui.DragFloat("Large Map Y Offset", ref this.Settings.LargeMapYOffset, 0.1f);
-            ImGuiHelper.ToolTip("Adjusts only the large map overlay vertically. Negative moves it up, positive moves it down.");
-            ImGui.DragFloat("Mini Map X Offset", ref this.Settings.MiniMapXOffset, 0.1f);
-            ImGuiHelper.ToolTip("Adjusts only the mini-map overlay horizontally. Negative moves it left, positive moves it right.");
-            ImGui.DragFloat("Mini Map Icon Scale", ref this.Settings.MiniMapScaleMultiplier, 0.005f, 0.01f, 2f, "%.3f");
-            ImGuiHelper.ToolTip("Scales the size of icons drawn on the mini-map only. " +
-                "The mini-map draws icons much larger than the large map by default; " +
-                "turn this down to shrink them.");
-            ImGui.DragFloat("Mini Map Zoom", ref this.Settings.MiniMapZoomMultiplier, 0.005f, 0.01f, 3f, "%.3f");
-            ImGuiHelper.ToolTip("Controls how far mini-map icons sit from your character " +
-                "(the mini-map's effective zoom). If enemies appear too far out in all " +
-                "directions, turn this down; too clustered, turn it up. Does not affect icon size.");
+                "(e.g. 0.137345) press CTRL + LMB");
             ImGui.Checkbox("Hide Radar when in Hideout/Town", ref this.Settings.DrawWhenNotInHideoutOrTown);
             ImGui.Checkbox("Hide Radar when game is in the background", ref this.Settings.DrawWhenForeground);
             ImGui.Checkbox("Hide Radar when game is paused", ref this.Settings.DrawWhenNotPaused);
@@ -221,11 +186,6 @@ namespace Radar
                     "Icons for Incursion Waygate devices (Vaal Ruins).");
 
                 this.Settings.DrawIconsSettingToImGui(
-                    "Runestone Icons",
-                    this.Settings.RunestoneIcons,
-                    "Icon for Expedition campaign Runestone terrain (all terrain variants combined).");
-
-                this.Settings.DrawIconsSettingToImGui(
                     "Expedition Marker Icons",
                     this.Settings.ExpeditionMarkerIcons,
                     "Icons for expedition markers, keyed by MinimapIcon name. Set size to 0 to disable.");
@@ -289,19 +249,15 @@ namespace Radar
                 return;
             }
 
-            if (Core.States.InGameStateObject.GameUi.IsPassiveSkillTreeVisible)
+            if (Core.States.InGameStateObject.GameUi.SkillTreeNodesUiElements.Count > 0)
             {
                 return;
             }
 
             if (largeMap.IsVisible)
             {
-                // X-offset bias baked in so defaults (Map Fix 1, Offsets 0)
-                // produce the correct alignment out of the box.
                 var largeMapRealCenter = largeMap.Center + largeMap.Shift + largeMap.DefaultShift;
-                largeMapRealCenter.X += MapXBias + this.Settings.LargeMapXOffset;
-                largeMapRealCenter.Y += this.Settings.LargeMapYOffset;
-                var largeMapModifiedZoom = this.Settings.LargeMapScaleMultiplier / 100f * LegacyRadarZoomBaseline;
+                var largeMapModifiedZoom = this.Settings.LargeMapScaleMultiplier * largeMap.Zoom;
                 Helper.DiagonalLength = this.largeMapDiagonalLength;
                 Helper.Scale = largeMapModifiedZoom;
                 ImGui.SetNextWindowPos(this.Settings.CullWindowPos);
@@ -320,21 +276,19 @@ namespace Radar
             if (miniMap.IsVisible)
             {
                 Helper.DiagonalLength = this.miniMapDiagonalLength;
-                Helper.Scale = LegacyRadarZoomBaseline * this.Settings.MiniMapZoomMultiplier * MiniMapZoomBaseline;
+                Helper.Scale = miniMap.Zoom;
                 var miniMapCenter = miniMap.Position +
                     (miniMap.Size / 2) +
                     miniMap.DefaultShift +
                     miniMap.Shift;
-                miniMapCenter.X += MiniMapXBias + this.Settings.MiniMapXOffset;
                 ImGui.SetNextWindowPos(miniMap.Position);
                 ImGui.SetNextWindowSize(miniMap.Size);
                 ImGui.SetNextWindowBgAlpha(0f);
                 ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0f);
                 ImGui.Begin("###minimapRadar", ImGuiHelper.TransparentWindowFlags);
                 ImGui.PopStyleVar();
-                var miniMapIconScale = LegacyRadarZoomBaseline * this.Settings.MiniMapScaleMultiplier * MiniMapScaleBaseline;
-                this.DrawTgtIcons(miniMapCenter, miniMapIconScale);
-                this.DrawMapIcons(miniMapCenter, miniMapIconScale);
+                this.DrawTgtIcons(miniMapCenter, miniMap.Zoom);
+                this.DrawMapIcons(miniMapCenter, miniMap.Zoom);
                 ImGui.End();
             }
         }
@@ -614,15 +568,6 @@ namespace Radar
                     }
 
                     this.DrawIconAtTgtLocations(fgDraw, mapCenter, pPos, playerRender, tgtKV.Value, templeIcon, iconSizeMultiplier, shiftUp: true);
-                }
-                else if (tgtKV.Key.StartsWith(RunestoneTgtPrefix) && tgtKV.Key.EndsWith(":1-y:1"))
-                {
-                    if (!this.Settings.RunestoneIcons.TryGetValue("Runestones", out var runestoneIcon))
-                    {
-                        continue;
-                    }
-
-                    this.DrawIconAtTgtLocations(fgDraw, mapCenter, pPos, playerRender, tgtKV.Value, runestoneIcon, iconSizeMultiplier, shiftUp: true);
                 }
                 else if (this.Settings.BossArenaTgts.ContainsKey(tgtKV.Key))
                 {
@@ -908,14 +853,6 @@ namespace Radar
                                 doneRemnant:;
                             }
                         }
-                        else if (entityValue.EntityCustomGroup == RadarSettings.RuneEncounterGroup)
-                        {
-                            if (this.Settings.RunestoneIcons.TryGetValue("Rune Encounter", out var runeEncounterIcon) &&
-                                runeEncounterIcon.IconScale > 0)
-                            {
-                                DrawIcon(runeEncounterIcon);
-                            }
-                        }
                         else
                         {
                             if (!otherImportantObjects.TryGetValue(entityValue.EntityCustomGroup, out var mopoiIcon))
@@ -1007,21 +944,18 @@ namespace Radar
 
         private void UpdateMiniMapDetails()
         {
-            // Scale the base-resolution diagonal with the window height so that
-            // the world-to-pixel ratio tracks the game's own vertical scaling.
-            // Changing only the window width does not affect the map scale.
             var map = Core.States.InGameStateObject.GameUi.MiniMap;
-            var baseRes = GameOffsets.Objects.UiElement.UiElementBaseFuncs.BaseResolution;
-            var baseDiag = Math.Sqrt((baseRes.X * baseRes.X) + (baseRes.Y * baseRes.Y));
-            this.miniMapDiagonalLength = baseDiag * map.Size.Y / baseRes.Y;
+            var widthSq = map.Size.X * map.Size.X;
+            var heightSq = map.Size.Y * map.Size.Y;
+            this.miniMapDiagonalLength = Math.Sqrt(widthSq + heightSq);
         }
 
         private void UpdateLargeMapDetails()
         {
             var map = Core.States.InGameStateObject.GameUi.LargeMap;
-            var baseRes = GameOffsets.Objects.UiElement.UiElementBaseFuncs.BaseResolution;
-            var baseDiag = Math.Sqrt((baseRes.X * baseRes.X) + (baseRes.Y * baseRes.Y));
-            this.largeMapDiagonalLength = baseDiag * map.Size.Y / baseRes.Y;
+            var widthSq = map.Size.X * map.Size.X;
+            var heightSq = map.Size.Y * map.Size.Y;
+            this.largeMapDiagonalLength = Math.Sqrt(widthSq + heightSq);
         }
 
         private void ReloadMapTexture()
