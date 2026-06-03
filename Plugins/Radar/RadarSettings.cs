@@ -175,12 +175,6 @@ namespace Radar
         public Dictionary<string, IconPicker> TempleIcons = new();
 
         /// <summary>
-        /// Icons to display on the map. Runestone includes the Campaign Runestone
-        /// terrain tiles (all terrain variants combined under a single "Runestones" entry).
-        /// </summary>
-        public Dictionary<string, IconPicker> RunestoneIcons = new();
-
-        /// <summary>
         /// Icons to display on the map. Boss arena icons for endgame maps.
         /// </summary>
         public Dictionary<string, IconPicker> BossIcons = new();
@@ -208,6 +202,12 @@ namespace Radar
         public Dictionary<string, IconPicker> ExpeditionRemnantIcons = new();
 
         /// <summary>
+        /// Icons to display on the map. Runestone includes the Campaign Runestone
+        /// terrain tiles (all terrain variants combined under a single "Runestones" entry).
+        /// </summary>
+        public Dictionary<string, IconPicker> RunestoneIcons = new();
+
+        /// <summary>
         /// The group number used for expedition markers in SpecialMiscObjPaths.
         /// </summary>
         [JsonIgnore]
@@ -226,7 +226,7 @@ namespace Radar
         public const int BossCheckpointGroup = 102;
 
         /// <summary>
-        /// The group number used for Rune encounter controllers in SpecialMiscObjPaths.
+        /// The group number used for Expedition 2 encounter controllers in SpecialMiscObjPaths.
         /// </summary>
         [JsonIgnore]
         public const int RuneEncounterGroup = 103;
@@ -253,6 +253,15 @@ namespace Radar
             { "RewardChestCurrency", "Currency Chest" },
             { "RewardChestMaps", "Maps Chest" },
             { "ExpeditionCavernEntrance", "Cavern Entrance" },
+        };
+
+        /// <summary>
+        /// Maps MinimapIcon.IconName to display name used as key in RunestoneIcons.
+        /// </summary>
+        [JsonIgnore]
+        public static readonly Dictionary<string, string> RunestoneIconNameMap = new()
+        {
+            { "Expedition2RemnantActive", "Runestone Encounter" },
         };
 
         /// <summary>
@@ -391,8 +400,8 @@ namespace Radar
             this.AddDefaultExpeditionIcons(basicIconPathName);
             this.AddDefaultExpeditionMarkerIcons(basicIconPathName);
             this.AddDefaultExpeditionRemnantIcons(basicIconPathName);
-            this.AddDefaultTempleIcons(basicIconPathName);
             this.AddDefaultRunestoneIcons(basicIconPathName);
+            this.AddDefaultTempleIcons(basicIconPathName);
             this.AddDefaultBossIcons(basicIconPathName);
         }
 
@@ -407,9 +416,8 @@ namespace Radar
             this.BaseIcons.TryAdd("Magic Chests", new IconPicker(iconPathName, 1, 13, 20, IconSize));
             this.BaseIcons.TryAdd("Rare Chests", new IconPicker(iconPathName, 4, 48, 20, IconSize));
             this.BaseIcons.TryAdd("All Other Chest", new IconPicker(iconPathName, 6, 9, 20, IconSize));
-
+            this.BaseIcons.TryAdd("Rune", new IconPicker(iconPathName, 5, 13, 50, IconSize));
             this.BaseIcons.TryAdd("Shrine", new IconPicker(iconPathName, 7, 0, 30, IconSize));
-
             this.BaseIcons.TryAdd("Friendly", new IconPicker(iconPathName, 1, 0, 10, IconSize));
             this.BaseIcons.TryAdd("Normal Monster", new IconPicker(iconPathName, 0, 14, 20, IconSize));
             this.BaseIcons.TryAdd("Magic Monster", new IconPicker(iconPathName, 6, 3, 20, IconSize));
@@ -454,12 +462,6 @@ namespace Radar
             this.TempleIcons.TryAdd("Vaal Ruins", new IconPicker(iconPathName, 9, 2, 75, IconSize));
         }
 
-        private void AddDefaultRunestoneIcons(string iconPathName)
-        {
-            this.RunestoneIcons.TryAdd("Runestones", new IconPicker(iconPathName, 13, 1, 75, IconSize));
-            this.RunestoneIcons.TryAdd("Rune Encounter", new IconPicker(iconPathName, 9, 2, 75, IconSize));
-        }
-
         private void AddDefaultExpeditionMarkerIcons(string iconPathName)
         {
             this.ExpeditionMarkerIcons.TryAdd("Splinter Chest", new IconPicker(iconPathName, 4, 40, 90, IconSize));
@@ -470,6 +472,12 @@ namespace Radar
             this.ExpeditionMarkerIcons.TryAdd("Maps Chest", new IconPicker(iconPathName, 13, 38, 0, IconSize));
             this.ExpeditionMarkerIcons.TryAdd("Cavern Entrance", new IconPicker(iconPathName, 0, 2, 90, IconSize));
             this.ExpeditionMarkerIcons.TryAdd("Logbook", new IconPicker(iconPathName, 4, 40, 90, IconSize));
+        }
+
+        private void AddDefaultRunestoneIcons(string iconPathName)
+        {
+            this.RunestoneIcons.TryAdd("Runestone Encounter", new IconPicker(iconPathName, 3, 12, 70, IconSize));
+            this.RunestoneIcons.TryAdd("Runestones", new IconPicker(iconPathName, 13, 1, 70, IconSize));
         }
 
         private void AddDefaultExpeditionRemnantIcons(string iconPathName)

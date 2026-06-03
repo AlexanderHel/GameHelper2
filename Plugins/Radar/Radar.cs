@@ -198,11 +198,6 @@ namespace Radar
                     "Icons for Incursion Waygate devices (Vaal Ruins).");
 
                 this.Settings.DrawIconsSettingToImGui(
-                    "Runestone Icons",
-                    this.Settings.RunestoneIcons,
-                    "Icon for Expedition campaign Runestone terrain (all terrain variants combined).");
-
-                this.Settings.DrawIconsSettingToImGui(
                     "Expedition Marker Icons",
                     this.Settings.ExpeditionMarkerIcons,
                     "Icons for expedition markers, keyed by MinimapIcon name. Set size to 0 to disable.");
@@ -211,6 +206,11 @@ namespace Radar
                     "Expedition Remnant Icons",
                     this.Settings.ExpeditionRemnantIcons,
                     "Icons for expedition remnants with specific mods. Set size to 0 to disable.");
+
+                this.Settings.DrawIconsSettingToImGui(
+                    "Runestone Icons",
+                    this.Settings.RunestoneIcons,
+                    "Icons for runestone encounters.");
 
                 this.Settings.DrawIconsSettingToImGui(
                     "Boss Icons",
@@ -901,10 +901,20 @@ namespace Radar
                         }
                         else if (entityValue.EntityCustomGroup == RadarSettings.RuneEncounterGroup)
                         {
-                            if (this.Settings.RunestoneIcons.TryGetValue("Rune Encounter", out var runeEncounterIcon) &&
-                                runeEncounterIcon.IconScale > 0)
+                            var hasMinimapIcon = entityValue.TryGetComponent<MinimapIcon>(out var runeMmIcon);
+
+                            if (hasMinimapIcon &&
+                                !string.IsNullOrEmpty(runeMmIcon!.IconName) &&
+                                RadarSettings.RunestoneIconNameMap.TryGetValue(runeMmIcon.IconName, out var runeDisplayName) &&
+                                this.Settings.RunestoneIcons.TryGetValue(runeDisplayName, out var runeIcon) &&
+                                runeIcon.IconScale > 0)
                             {
-                                DrawIcon(runeEncounterIcon);
+                                DrawIcon(runeIcon);
+                            }
+                            else if (this.Settings.RunestoneIcons.TryGetValue("Runestone Encounter", out runeIcon) &&
+                                     runeIcon.IconScale > 0)
+                            {
+                                DrawIcon(runeIcon);
                             }
                         }
                         else
