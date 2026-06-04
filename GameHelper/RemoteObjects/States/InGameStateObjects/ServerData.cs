@@ -55,7 +55,8 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         /// <inheritdoc />
         internal override void ToImGui()
         {
-            if ((int)this.selectedInvName > this.PlayerInventories.Count)
+            if (this.selectedInvName != InventoryName.NoInvSelected &&
+                !this.PlayerInventories.ContainsKey(this.selectedInvName))
             {
                 this.ClearCurrentlySelectedInventory();
             }
