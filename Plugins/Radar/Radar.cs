@@ -804,7 +804,16 @@ namespace Radar
                     for (var pi = 1; pi < cachedPath.Count; pi++)
                     {
                         var pt = cachedPath[pi];
-                        var ptFpos = Helper.DeltaInWorldToMapDelta(pt - pPos, 0f);
+                        float ptHeight = 0;
+                        var ix = (int)pt.X;
+                        var iy = (int)pt.Y;
+                        if (ix >= 0 && ix < gridHeightData[0].Length &&
+                            iy >= 0 && iy < gridHeightData.Length)
+                        {
+                            ptHeight = gridHeightData[iy][ix];
+                        }
+
+                        var ptFpos = Helper.DeltaInWorldToMapDelta(pt - pPos, -playerRender.TerrainHeight + ptHeight);
                         var ptScreen = mapCenter + ptFpos;
                         fgDraw.AddLine(prevScreen, ptScreen, paletteColor, thickness + 1f);
                         prevScreen = ptScreen;
@@ -1508,6 +1517,7 @@ namespace Radar
             }
 
             var pPos = new Vector2(playerRender.GridPosition.X, playerRender.GridPosition.Y);
+            var gridHeightData = currentAreaInstance.GridHeightData;
 
             ImDrawListPtr fgDraw;
             if (this.Settings.DrawPOIInCull)
@@ -1539,7 +1549,16 @@ namespace Radar
                 for (var pi = 1; pi < cachedPath.Count; pi++)
                 {
                     var pt = cachedPath[pi];
-                    var ptFpos = Helper.DeltaInWorldToMapDelta(pt - pPos, 0f);
+                    float ptHeight = 0;
+                    var ix = (int)pt.X;
+                    var iy = (int)pt.Y;
+                    if (ix >= 0 && ix < gridHeightData[0].Length &&
+                        iy >= 0 && iy < gridHeightData.Length)
+                    {
+                        ptHeight = gridHeightData[iy][ix];
+                    }
+
+                    var ptFpos = Helper.DeltaInWorldToMapDelta(pt - pPos, -playerRender.TerrainHeight + ptHeight);
                     var ptScreen = mapCenter + ptFpos;
                     fgDraw.AddLine(prevScreen, ptScreen, pathColor, thickness + 1f);
                     prevScreen = ptScreen;
@@ -1565,7 +1584,16 @@ namespace Radar
                 for (var pi = 1; pi < cachedPath.Count; pi++)
                 {
                     var pt = cachedPath[pi];
-                    var ptFpos = Helper.DeltaInWorldToMapDelta(pt - pPos, 0f);
+                    float ptHeight = 0;
+                    var ix = (int)pt.X;
+                    var iy = (int)pt.Y;
+                    if (ix >= 0 && ix < gridHeightData[0].Length &&
+                        iy >= 0 && iy < gridHeightData.Length)
+                    {
+                        ptHeight = gridHeightData[iy][ix];
+                    }
+
+                    var ptFpos = Helper.DeltaInWorldToMapDelta(pt - pPos, -playerRender.TerrainHeight + ptHeight);
                     var ptScreen = mapCenter + ptFpos;
                     fgDraw.AddLine(prevScreen, ptScreen, pathColor, thickness + 1f);
                     prevScreen = ptScreen;
