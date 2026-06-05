@@ -228,6 +228,8 @@ namespace GameHelper.Settings
             "Metadata/Monsters/MarakethTimeDjinn/FireDjinn",
             "Metadata/Monsters/Monsters/LivingLightningPlayerSummoned",
             "Metadata/Monsters/Pirates/CampExplosion",
+            "Metadata/Monsters/CageSkeleton/CageSkeleton",
+            "Metadata/Pet",
         };
 
         /// <summary>
