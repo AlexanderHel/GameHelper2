@@ -165,7 +165,8 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions
                 {
                     typeof(GameHelper.RemoteEnums.Animation),
                     typeof(Interface.MonsterRarity),
-                    typeof(Interface.MonsterNearbyZones)
+                    typeof(Interface.MonsterNearbyZones),
+                    typeof(ClickableTransparentOverlay.Win32.VK)
                 };
 
                 parsingConfig.CustomTypeProvider = new System.Linq.Dynamic.Core.CustomTypeProviders.DefaultDynamicLinqCustomTypeProvider(parsingConfig, types, true);
