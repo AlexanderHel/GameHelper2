@@ -32,6 +32,7 @@ namespace AutoHotKeyTrigger.ProfileManager.Templates
                 ConditionType.IS_SKILL_USEABLE => IsSkillUseableTemplate.Add(),
                 ConditionType.DEPLOYED_OBJECT_COUNT => DeployedObjectTemplate.Add(),
                 ConditionType.NEARBY_MONSTER_COUNT => NearbyMonsterTemplate.Add(),
+                ConditionType.NEARBY_MONSTER_COUNT_IN_RANGE => NearbyMonsterInRangeTemplate.Add(),
                 ConditionType.ON_KEY_PRESSED_FOR_ACTION => IsKeyPressedTemplate.Add(),
                 ConditionType.WEAPON_SET_ACTIVE => WeaponSetActiveTemplate.Add(),
                 ConditionType.SHAPESHIFTED => ShapeShiftedTemplate.Add(),

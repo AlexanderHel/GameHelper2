@@ -41,6 +41,7 @@ namespace AutoHotKeyTrigger
             this.DebugMode = false;
             this.ShouldRunInHideout = false;
             this.DumpStatusEffectOnMe = VK.F10;
+            this.ScanUniqueInvulnMarkers = false;
         }
 
         /// <summary>
@@ -88,5 +89,13 @@ namespace AutoHotKeyTrigger
         ///     status effect or not.
         /// </summary>
         public VK DumpStatusEffectOnMe;
+
+        /// <summary>
+        ///     Gets a value indicating whether to scan nearby Unique/boss monsters once per
+        ///     second for stats/buffs that could mean they are currently invulnerable. This is
+        ///     a discovery tool: it logs candidate markers so the real "cannot be damaged"
+        ///     signal can be identified, then wired into a proper condition.
+        /// </summary>
+        public bool ScanUniqueInvulnMarkers;
     }
 }

@@ -64,6 +64,12 @@ namespace AutoHotKeyTrigger.ProfileManager.Enums
         NEARBY_MONSTER_COUNT,
 
         /// <summary>
+        ///     Condition based on the nearby monster count within an explicit range,
+        ///     optionally filtered by whether the monsters are currently damageable.
+        /// </summary>
+        NEARBY_MONSTER_COUNT_IN_RANGE,
+
+        /// <summary>
         ///     Condition based on the user pressing of mouse/keyboard key.
         /// </summary>
         ON_KEY_PRESSED_FOR_ACTION,
