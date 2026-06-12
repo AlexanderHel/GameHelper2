@@ -6,6 +6,7 @@ namespace GameHelper.Settings
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Numerics;
     using ClickableTransparentOverlay;
     using ClickableTransparentOverlay.Win32;
@@ -17,6 +18,7 @@ namespace GameHelper.Settings
     using GameOffsets.Objects.States.InGameState;
     using GameHelper.RemoteEnums.Entity;
     using GameHelper.RemoteEnums;
+    using GameHelper.Ui;
 
     /// <summary>
     ///     Creates the MainMenu on the UI.
@@ -60,50 +62,38 @@ namespace GameHelper.Settings
 
         private static void DrawManuBar()
         {
-            if (ImGui.BeginMenuBar())
+            if (!ImGui.BeginMenuBar())
             {
-                if (ImGui.BeginMenu("Enable Plugins"))
-                {
-                    foreach (var container in PManager.Plugins)
-                    {
-                        var isEnabled = container.Metadata.Enable;
-                        if (ImGui.Checkbox($"{container.Name}", ref isEnabled))
-                        {
-                            container.Metadata.Enable = !container.Metadata.Enable;
-                            if (container.Metadata.Enable)
-                            {
-                                container.Plugin.OnEnable(Core.Process.Address != IntPtr.Zero);
-                            }
-                            else
-                            {
-                                container.Plugin.SaveSettings();
-                                container.Plugin.OnDisable();
-                            }
-                        }
-                    }
+                return;
+            }
 
-                    ImGui.EndMenu();
-                }
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiTheme.TextMuted);
+            ImGui.Text($"GameHelper {Core.GetVersion()}");
+            ImGui.PopStyleColor();
+            ImGui.SameLine();
+            ImGui.TextDisabled("|");
+            ImGui.SameLine();
+            ImGui.TextDisabled($"Hide/show menu: {Core.GHSettings.MainMenuHotKey}");
 
 #if DEBUG
-                ImGui.Checkbox("ImGui Demo Window", ref showImGuiDemo);
-                if (showImGuiDemo)
-                {
-                    ImGui.ShowDemoWindow(ref showImGuiDemo);
-                }
+            ImGui.SameLine();
+            ImGui.Checkbox("ImGui Demo", ref showImGuiDemo);
+            if (showImGuiDemo)
+            {
+                ImGui.ShowDemoWindow(ref showImGuiDemo);
+            }
 #endif
 
-                ImGui.EndMenuBar();
-            }
+            ImGui.EndMenuBar();
         }
 
         private static void DrawTabs()
         {
-            if (ImGui.BeginTabBar("pluginsTabBar", ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.Reorderable))
+            if (ImGui.BeginTabBar("settingsTabBar", ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.Reorderable))
             {
-                if (ImGui.BeginTabItem("Core"))
+                if (ImGui.BeginTabItem("General"))
                 {
-                    if (ImGui.BeginChild("CoreChildSetting"))
+                    if (ImGui.BeginChild("GeneralChildSetting"))
                     {
                         DrawCoreSettings();
                     }
@@ -112,22 +102,152 @@ namespace GameHelper.Settings
                     ImGui.EndTabItem();
                 }
 
-                foreach (var container in PManager.Plugins)
+                if (ImGui.BeginTabItem("Plugins"))
                 {
-                    if (container.Metadata.Enable && ImGui.BeginTabItem(container.Name))
+                    if (ImGui.BeginChild("PluginsChildSetting"))
                     {
-                        if (ImGui.BeginChild("PluginChildSetting"))
-                        {
-                            container.Plugin.DrawSettings();
-                        }
-
-                        ImGui.EndChild();
-                        ImGui.EndTabItem();
+                        DrawPluginManager();
                     }
+
+                    ImGui.EndChild();
+                    ImGui.EndTabItem();
                 }
+
+                DrawPluginSettingsTabs();
 
                 ImGui.EndTabBar();
             }
+        }
+
+        /// <summary>
+        ///     Draws the per-plugin settings tabs for every enabled plugin.
+        /// </summary>
+        private static void DrawPluginSettingsTabs()
+        {
+            foreach (var container in PManager.Plugins)
+            {
+                if (!container.Metadata.Enable)
+                {
+                    continue;
+                }
+
+                ImGui.PushStyleColor(ImGuiCol.Tab, new Vector4(0.16f, 0.20f, 0.30f, 1f));
+                ImGui.PushStyleColor(ImGuiCol.TabHovered, new Vector4(0.28f, 0.38f, 0.55f, 1f));
+                ImGui.PushStyleColor(ImGuiCol.TabSelected, ImGuiTheme.Accent);
+                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.95f, 0.96f, 1f, 1f));
+
+                if (ImGui.BeginTabItem($"{container.Name}##pluginCfg"))
+                {
+                    ImGuiTheme.BeginPanel($"PluginPanel_{container.Name}");
+                    container.Plugin.DrawSettings();
+                    ImGuiTheme.EndPanel();
+                    ImGui.EndTabItem();
+                }
+
+                ImGui.PopStyleColor(4);
+            }
+        }
+
+        /// <summary>
+        ///     Draws the plugin manager table (enable/disable plugins).
+        /// </summary>
+        private static void DrawPluginManager()
+        {
+            ImGuiTheme.SectionHeader(
+                "Plugin Management",
+                "Enable or disable plugins. Enabled plugins get their own settings tab. Changes are saved automatically.");
+
+            var enabledCount = PManager.Plugins.Count(p => p.Metadata.Enable);
+            ImGui.TextDisabled($"Active: {enabledCount} / {PManager.Plugins.Count}");
+            ImGui.SameLine();
+            if (ImGui.SmallButton("Enable all"))
+            {
+                SetAllPlugins(true);
+            }
+
+            ImGui.SameLine();
+            if (ImGui.SmallButton("Disable all"))
+            {
+                SetAllPlugins(false);
+            }
+
+            ImGui.Spacing();
+
+            if (!ImGui.BeginTable(
+                "pluginTable",
+                3,
+                ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.ScrollY,
+                new Vector2(0, 0)))
+            {
+                return;
+            }
+
+            ImGui.TableSetupColumn("Plugin", ImGuiTableColumnFlags.WidthStretch, 0.7f);
+            ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.WidthFixed, 70f);
+            ImGui.TableSetupColumn("Enable", ImGuiTableColumnFlags.WidthFixed, 60f);
+            ImGui.TableHeadersRow();
+
+            foreach (var container in PManager.Plugins)
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(container.Name);
+
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                if (container.Metadata.Enable)
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGuiTheme.Success);
+                    ImGui.Text("Active");
+                    ImGui.PopStyleColor();
+                }
+                else
+                {
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGuiTheme.TextMuted);
+                    ImGui.Text("Off");
+                    ImGui.PopStyleColor();
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                var enabled = container.Metadata.Enable;
+                if (ImGui.Checkbox($"##enable_{container.Name}", ref enabled))
+                {
+                    SetPluginEnabled(container, enabled);
+                }
+            }
+
+            ImGui.EndTable();
+        }
+
+        private static void SetAllPlugins(bool enabled)
+        {
+            foreach (var container in PManager.Plugins)
+            {
+                SetPluginEnabled(container, enabled);
+            }
+        }
+
+        private static void SetPluginEnabled(PluginContainer container, bool enabled)
+        {
+            if (container.Metadata.Enable == enabled)
+            {
+                return;
+            }
+
+            container.Metadata.Enable = enabled;
+            if (enabled)
+            {
+                container.Plugin.OnEnable(Core.Process.Address != IntPtr.Zero);
+            }
+            else
+            {
+                container.Plugin.SaveSettings();
+                container.Plugin.OnDisable();
+            }
+
+            CoroutineHandler.RaiseEvent(GameHelperEvents.TimeToSaveAllSettings);
         }
 
         /// <summary>
@@ -135,6 +255,35 @@ namespace GameHelper.Settings
         /// </summary>
         private static void DrawCoreSettings()
         {
+            ImGuiTheme.SectionHeader(
+                "Status",
+                $"All settings (including plugins) are saved automatically when you close the overlay or hide it via {Core.GHSettings.MainMenuHotKey}.");
+            ImGui.Text("Current Game State:");
+            ImGui.SameLine();
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiTheme.Accent);
+            ImGui.Text($"{Core.States.GameCurrentState}");
+            ImGui.PopStyleColor();
+            ImGui.InputText("Party Leader Name", ref Core.GHSettings.LeaderName, 200);
+
+            ImGuiTheme.SectionHeader("Controls & Display");
+            DrawInputConfigWidget();
+            DrawNearbyWidget();
+            DrawToolsConfig();
+
+            ImGuiTheme.SectionHeader(
+                "Filters & Tracking",
+                "Advanced entity filters. Change zone or restart after edits.");
+            DrawPoiWidget();
+            DrawMonstersToIgnore();
+            DrawNPCWidget();
+            DrawMiscObjWidget();
+
+            ImGuiTheme.SectionHeader("Advanced");
+            DrawMiscConfig();
+            ChangeFontWidget();
+            DrawReloadPluginWidget();
+
+            ImGuiTheme.SectionHeader("About");
             ImGui.PushTextWrapPos(ImGui.GetContentRegionAvail().X);
             ImGui.TextColored(color, "This is free software, if you purchased a copy you have been scammed");
             ImGui.TextColored(color, "For PoE2 0.5.1");
@@ -145,23 +294,7 @@ namespace GameHelper.Settings
             ImGui.TextColored(Vector4.One, "Developer of this software is not responsible for " +
                               "any loss that may happen due to the usage of this software. Use this " +
                               "software at your own risk.");
-            ImGui.NewLine();
-            ImGui.TextColored(Vector4.One, "All Settings (including plugins) are saved automatically " +
-                  $"when you close the overlay or hide it via {Core.GHSettings.MainMenuHotKey} button.");
-            ImGui.NewLine();
-            ImGui.Text($"Current Game State: {Core.States.GameCurrentState}");
             ImGui.PopTextWrapPos();
-            ImGui.InputText("Party Leader Name", ref Core.GHSettings.LeaderName, 200);
-            DrawPoiWidget();
-            DrawMonstersToIgnore();
-            DrawNPCWidget();
-            DrawMiscObjWidget();
-            DrawNearbyWidget();
-            DrawInputConfigWidget();
-            DrawToolsConfig();
-            DrawMiscConfig();
-            ChangeFontWidget();
-            DrawReloadPluginWidget();
         }
 
         private static void DrawNearbyWidget()
