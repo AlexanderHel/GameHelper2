@@ -45,6 +45,9 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         private const int AtlasNodeStatusByteOffset = 0x2CF;
         private const int AtlasNodeMapDataOffset = 0x2A0;
         private const int AtlasNodeConnectionsVectorOffset = 0x5A8;
+        private const int AtlasNodeContentNameOffset = 0x290;
+        private const int AtlasNodeContentVecOffset = 0x350;
+        private const int AtlasNodeBadgeContentIdOffset = 0x188;
         private const byte AtlasNodeAccessibleBit = 0x01;
         private const byte AtlasNodeCompletedBit = 0x02;
         private const int UiElementBaseFlagsOffset = 0x180;
@@ -270,6 +273,18 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                         foreach (var badge in map.ContentNames)
                         {
                             ImGui.Text($"- {badge}");
+                        }
+
+                        ImGui.Text($"Content Tokens: {map.ContentTokens.Count}");
+                        foreach (var token in map.ContentTokens)
+                        {
+                            ImGui.Text($"- 0x{token:X8}");
+                        }
+
+                        ImGui.Text($"Badge Content Ids: {map.BadgeContentIds.Count}");
+                        foreach (var id in map.BadgeContentIds)
+                        {
+                            ImGui.Text($"- 0x{id:X8}");
                         }
 
                         ImGui.TreePop();
@@ -544,6 +559,9 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 }
             }
 
+            ReadAtlasContentContainer(nodeUi, out var badgeAddresses, out var contentNames, out var badgeContentIds);
+            var contentTokens = ReadAtlasContentTokens(nodeAddr);
+
             return new AtlasMapNode(
                 index,
                 nodeAddr,
@@ -551,9 +569,19 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 gridPosition,
                 biomeId,
                 state,
-                Array.Empty<string>(),
-                ReadAtlasBadgeAddresses(nodeUi),
+                contentNames,
+                badgeAddresses,
+                contentTokens,
+                badgeContentIds,
                 connections.TryGetValue(gridPosition, out var connected) ? connected : []);
+        }
+
+        private static List<uint> ReadAtlasContentTokens(IntPtr nodeAddr)
+        {
+            var reader = Core.Process.Handle;
+            var tokenVector = reader.ReadMemory<StdVector>(nodeAddr + AtlasNodeContentVecOffset);
+            var tokens = reader.ReadStdVector<uint>(tokenVector);
+            return tokens.Length > 0 ? new List<uint>(tokens) : new List<uint>();
         }
 
         private static Dictionary<StdTuple2D<int>, List<StdTuple2D<int>>> ReadAtlasConnections(IntPtr atlasAddress)
@@ -608,25 +636,50 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             }
         }
 
-        private static List<IntPtr> ReadAtlasBadgeAddresses(UiElementBase nodeUi)
+        // Single pass over the node's content container (node[0][0]) collecting, for each badge child:
+        // its address, its content-name string (wide string off the child+0x290 pointer, class-2
+        // labelled content), and its badge content id (u32 at child+0x188). Empty/blank names are
+        // skipped; the address and id lists stay child-aligned for callers that need the raw badges.
+        private static void ReadAtlasContentContainer(
+            UiElementBase nodeUi,
+            out List<IntPtr> badgeAddresses,
+            out List<string> contentNames,
+            out List<uint> badgeContentIds)
         {
-            var result = new List<IntPtr>();
+            badgeAddresses = new List<IntPtr>();
+            contentNames = new List<string>();
+            badgeContentIds = new List<uint>();
+
             var contentContainer = nodeUi[0]?[0];
             if (contentContainer == null)
             {
-                return result;
+                return;
             }
 
+            var reader = Core.Process.Handle;
             for (var i = 0; i < contentContainer.TotalChildrens; i++)
             {
                 var childAddr = contentContainer[i]?.Address ?? IntPtr.Zero;
-                if (childAddr != IntPtr.Zero)
+                if (childAddr == IntPtr.Zero)
                 {
-                    result.Add(childAddr);
+                    continue;
+                }
+
+                badgeAddresses.Add(childAddr);
+                badgeContentIds.Add(reader.ReadMemory<uint>(childAddr + AtlasNodeBadgeContentIdOffset));
+
+                var contentPtr = reader.ReadMemory<IntPtr>(childAddr + AtlasNodeContentNameOffset);
+                if (contentPtr == IntPtr.Zero)
+                {
+                    continue;
+                }
+
+                var contentName = reader.ReadUnicodeString(contentPtr);
+                if (!string.IsNullOrWhiteSpace(contentName))
+                {
+                    contentNames.Add(contentName);
                 }
             }
-
-            return result;
         }
 
         private static IntPtr ResolveChildAddress(IntPtr rootAddress, int[] childPath)

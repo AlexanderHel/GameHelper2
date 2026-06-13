@@ -24,6 +24,8 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             AtlasMapNodeState state,
             IReadOnlyList<string> contentNames,
             IReadOnlyList<IntPtr> badgeAddresses,
+            IReadOnlyList<uint> contentTokens,
+            IReadOnlyList<uint> badgeContentIds,
             IReadOnlyList<StdTuple2D<int>> connectedGridPositions)
         {
             this.Index = index;
@@ -34,6 +36,8 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             this.State = state;
             this.ContentNames = new ReadOnlyCollection<string>(new List<string>(contentNames));
             this.BadgeAddresses = new ReadOnlyCollection<IntPtr>(new List<IntPtr>(badgeAddresses));
+            this.ContentTokens = new ReadOnlyCollection<uint>(new List<uint>(contentTokens));
+            this.BadgeContentIds = new ReadOnlyCollection<uint>(new List<uint>(badgeContentIds));
             this.ConnectedGridPositions = new ReadOnlyCollection<StdTuple2D<int>>(new List<StdTuple2D<int>>(connectedGridPositions));
         }
 
@@ -104,6 +108,20 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
         ///     Gets the number of badge UiElements under Atlas node child path [0][0].
         /// </summary>
         public int BadgeCount => this.BadgeAddresses.Count;
+
+        /// <summary>
+        ///     Gets the raw per-node content tokens (class-1 content: the StdVector&lt;u32&gt; living
+        ///     on the Atlas node UiElement at element+0x350). Populated only for visible/rendered nodes.
+        ///     Resolution of a token to a content name is left to consumers.
+        /// </summary>
+        public IReadOnlyList<uint> ContentTokens { get; }
+
+        /// <summary>
+        ///     Gets the raw class-2 (badge) content ids — the u32 at badge+0x188 of each
+        ///     node[0][0] child. The high word is a constant category; the content type is the
+        ///     low 16 bits. Resolution of an id to a content name is left to consumers.
+        /// </summary>
+        public IReadOnlyList<uint> BadgeContentIds { get; }
 
         /// <summary>
         ///     Gets connected Atlas grid positions read from the Atlas connection data, when available.

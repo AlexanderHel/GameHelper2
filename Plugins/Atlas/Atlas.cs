@@ -281,8 +281,6 @@
 
             var drawList = ImGui.GetBackgroundDrawList();
 
-            drawList.ChannelsSplit(4);
-
             var atlasUi = Core.States.InGameStateObject.GameUi.Atlas;
             if (atlasUi.Address == IntPtr.Zero || !atlasUi.IsVisible)
                 return;
@@ -339,6 +337,12 @@
                 if (!Settings.ControllerMode)
                     if (inventoryPanel)
                         return;
+
+                // Split into draw channels only after every early-return guard above has passed, so
+                // the shared background draw list's splitter is always merged before we return (an
+                // unmerged split makes the next plugin that splits the same list hit ImGui's
+                // "nested channel splitting" assertion).
+                drawList.ChannelsSplit(4);
 
                 // Off-screen labels/badges are culled (nothing to draw); a margin keeps
                 // partially-visible labels alive. Lines below are drawn before this cull so
@@ -404,25 +408,11 @@
                     bool completed = nd.State == AtlasNodeState.CompletedBase;
                     bool notAccessible = nd.State != AtlasNodeState.AccessibleNow && nd.State != AtlasNodeState.CompletedBase;
 
-                    if (Settings.HideCompletedMaps && completed)
-                        continue;
-                    if (Settings.HideNotAccessibleMaps && notAccessible)
-                        continue;
-
-                    var nodeUi = atlasUi[nd.Index];
-                    if (nodeUi == null)
-                        continue;
-
-                    var textSize = ImGui.CalcTextSize(mapName);
-                    var nodeCenter = nodeUi.Position + nodeUi.Size * 0.5f;
-                    Vector2 drawPosition = nodeCenter - textSize * 0.5f + Settings.AnchorNudge;
-
-                    var padding = new Vector2(5, 2) * uiScale;
-                    var bgPos = drawPosition - padding;
-                    var bgSize = textSize + padding * 2;
-
                     // ── Routing ──────────────────────────────────────────────
-                    // Determine if this node is a routing target.
+                    // Determine if this node is a routing target. This MUST happen before the
+                    // "hide not accessible" cull below: route targets are maps you haven't reached
+                    // yet (so they read as not-accessible), and culling them first would mean a path
+                    // is never drawn when "Hide Not Accessible Maps" is on.
                     bool routeTarget = false;
                     uint routeColor = 0;
                     int maxHops = 0;
@@ -442,6 +432,25 @@
                     else if (Settings.DrawLinesToArbiterMaps && !completed
                         && nd.Tags.Exists(t => string.Equals(t, "arbiter", StringComparison.OrdinalIgnoreCase)))
                         { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.ArbiterPathColor); maxHops = Settings.ArbiterMaxHops; }
+
+                    if (Settings.HideCompletedMaps && completed)
+                        continue;
+                    // Route targets stay visible even when "Hide Not Accessible Maps" is on, so the
+                    // map you're routing to (and its path) isn't hidden along with the rest.
+                    if (Settings.HideNotAccessibleMaps && notAccessible && !routeTarget)
+                        continue;
+
+                    var nodeUi = atlasUi[nd.Index];
+                    if (nodeUi == null)
+                        continue;
+
+                    var textSize = ImGui.CalcTextSize(mapName);
+                    var nodeCenter = nodeUi.Position + nodeUi.Size * 0.5f;
+                    Vector2 drawPosition = nodeCenter - textSize * 0.5f + Settings.AnchorNudge;
+
+                    var padding = new Vector2(5, 2) * uiScale;
+                    var bgPos = drawPosition - padding;
+                    var bgSize = textSize + padding * 2;
 
                     if (routeTarget)
                     {
