@@ -67,20 +67,7 @@ namespace GameHelper
         {
             Ui.ImGuiTheme.Apply();
 
-            if (MiscHelper.TryConvertStringToImGuiGlyphRanges(Core.GHSettings.FontCustomGlyphRange, out var glyphRanges))
-            {
-                Core.Overlay.ReplaceFont(
-                    Core.GHSettings.FontPathName,
-                    Core.GHSettings.FontSize,
-                    glyphRanges);
-            }
-            else
-            {
-                Core.Overlay.ReplaceFont(
-                    Core.GHSettings.FontPathName,
-                    Core.GHSettings.FontSize,
-                    Core.GHSettings.FontLanguage);
-            }
+            UniversalFont.ApplyFromSettings();
 
             PManager.InitializePlugins();
             return Task.CompletedTask;

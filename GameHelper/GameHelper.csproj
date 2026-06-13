@@ -13,6 +13,7 @@
     <AssemblyVersion>2.4.0.0</AssemblyVersion>
     <FileVersion>2.4.0.0</FileVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -41,6 +42,16 @@
   <ItemGroup>
     <EmbeddedResource Include="Data\WorldAreaNames.tsv" />
     <EmbeddedResource Include="Data\WorldAreaTags.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bundled fonts for the optional Universal Font mode (DejaVuSans + GNU Unifont). -->
+    <None Include="fonts\DejaVuSans.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="fonts\unifont.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
