@@ -98,9 +98,9 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions
         public Dictionary<string, ActiveSkillDetails> ActiveSkills { get; } = new();
 
         /// <summary>
-        ///     The objects deployed by the player with Object type as key and Object Counter as value.
+        ///     The objects deployed by the player, indexed by object-type id (absent ids read as 0).
         /// </summary>
-        public int[] DeployedObjectsCount { get; } = new int[256];
+        public DeployedObjectCounter DeployedObjectsCount { get; } = new();
 
         /// <summary>
         ///     The ailment list

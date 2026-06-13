@@ -59,9 +59,11 @@ namespace GameHelper.RemoteObjects.Components
         public HashSet<string> UsableMinionCommandSkills { get; } = new();
 
         /// <summary>
-        ///     Gets the total number of entities of a given DeployedObjectType is deployed by this entity.
+        ///     Gets the number of entities deployed by this entity, keyed by DeployedObjectType id.
+        ///     Index it with a type id; absent ids read as 0. PoE2 uses large (dat-row) type ids, so
+        ///     this is dictionary-backed rather than a fixed array.
         /// </summary>
-        public int[] DeployedEntities { get; private set; } = new int[256];
+        public DeployedObjectCounter DeployedEntities { get; } = new();
 
         /// <summary>
         ///     Converts the <see cref="Actor" /> class data to ImGui.
@@ -87,9 +89,17 @@ namespace GameHelper.RemoteObjects.Components
 
             if (ImGui.TreeNode("Cooldowns"))
             {
+                // Map each skill key to its name so cooldown entries can show "Name (key)".
+                var cooldownSkillNames = new Dictionary<uint, string>();
+                foreach (var (skillName, details) in this.ActiveSkills)
+                {
+                    cooldownSkillNames[details.UnknownIdAndEquipmentInfo] = skillName;
+                }
+
                 foreach (var (skillId, skillDetails) in this.ActiveSkillCooldowns)
                 {
-                    if (ImGui.TreeNode($"{skillId:X}"))
+                    var name = cooldownSkillNames.TryGetValue(skillId, out var sn) ? sn : "?";
+                    if (ImGui.TreeNode($"{name} ({skillId:X})"))
                     {
                         ImGui.Text($"Active Skill Id: {skillDetails.ActiveSkillsDatId}");
                         ImGuiHelper.IntPtrToImGui(
@@ -159,12 +169,9 @@ namespace GameHelper.RemoteObjects.Components
             if (ImGui.TreeNode("Deployed Objects"))
             {
                 ImGui.Text("Please throw mines, totem, minons, traps, etc to populate the data over here.");
-                for (var i = 0; i < this.DeployedEntities.Length; i++)
+                foreach (var (type, count) in this.DeployedEntities)
                 {
-                    if (this.DeployedEntities[i] > 0)
-                    {
-                        ImGui.Text($"Object Type: {i}, Total Count: {this.DeployedEntities[i]}");
-                    }
+                    ImGui.Text($"{DeployedObjectCounter.CategoryName(type)} ({type}): {count}");
                 }
 
                 ImGui.TreePop();
@@ -290,15 +297,11 @@ namespace GameHelper.RemoteObjects.Components
                 }
             }
 
-            Array.Fill(this.DeployedEntities, 0);
+            this.DeployedEntities.Clear();
             var deployedEntities = reader.ReadStdVector<DeployedEntityStructure>(data.DeployedEntityArray);
             for (var i = 0; i < deployedEntities.Length; i++)
             {
-                if (deployedEntities[i].DeployedObjectType < this.DeployedEntities.Length &&
-                    deployedEntities[i].DeployedObjectType >= 0)
-                {
-                    this.DeployedEntities[deployedEntities[i].DeployedObjectType]++;
-                }
+                this.DeployedEntities.Increment(deployedEntities[i].DeployedObjectType);
             }
 
             this.UpdateMinionCommandSkills(deployedEntities);

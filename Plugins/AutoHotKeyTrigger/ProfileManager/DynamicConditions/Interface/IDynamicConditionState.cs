@@ -7,6 +7,7 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions.Interface
     using System.Collections.Generic;
     using ClickableTransparentOverlay.Win32;
     using GameHelper.RemoteEnums;
+    using GameHelper.RemoteObjects.Components;
     using GameOffsets.Objects.Components;
 
     /// <summary>
@@ -40,9 +41,9 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions.Interface
         Dictionary<string, ActiveSkillDetails> ActiveSkills { get; }
 
         /// <summary>
-        ///     The objects deployed by the player with Object type as key and Object Counter as value.
+        ///     The objects deployed by the player, indexed by object-type id (absent ids read as 0).
         /// </summary>
-        int[] DeployedObjectsCount { get; }
+        DeployedObjectCounter DeployedObjectsCount { get; }
 
         /// <summary>
         ///     The buff list
