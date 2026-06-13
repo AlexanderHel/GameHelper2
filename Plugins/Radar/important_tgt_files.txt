@@ -397,7 +397,7 @@
   },
   "P3_1": {
     "Metadata/Terrain/interlude/part3/p3_1/town_to_jungle_transition.tdtx:0-y:0": "Glade",
-    "Metadata/Terrain/Interlude/Part3/P3_1/Jungle_to_KriarVillage_Transition.tdtx:0-y:0": "Kriar Village"
+    "Metadata/Terrain/Interlude/Part3/P3_1/Jungle_to_KriarVillage_Transition.tdtx:4-y:6": "Kriar Village"
   },
   "P3_2": {
     "Metadata/Terrain/interlude/part3/p3_2/jungle_transition.tdtx:0-y:0": "Ashen Forest",
