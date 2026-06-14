@@ -37,6 +37,19 @@
         private static readonly Dictionary<string, ContentInfo> MapPlain = [];
         private static readonly Dictionary<byte, BiomeInfo> Biomes = [];
 
+        // Named-map pathfinding categories — matched by exact (normalized, case-insensitive) display
+        // name against nd.MapName. Each pairs with a DrawLinesTo*/*PathColor/*MaxHops setting.
+        private static readonly HashSet<string> AtlasProgressionMaps = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Precursor Tower", "Ancient Gateway", "The Burning Monolith", "Western Gateway",
+            "Eastern Gateway", "Western Enigma Chamber", "Eastern Enigma Chamber", "The Origin Tower",
+        };
+        private static readonly HashSet<string> RitualMaps = new(StringComparer.OrdinalIgnoreCase) { "Caer Tarth" };
+        private static readonly HashSet<string> BreachMaps = new(StringComparer.OrdinalIgnoreCase) { "Hive Colony" };
+        private static readonly HashSet<string> ExpeditionMaps = new(StringComparer.OrdinalIgnoreCase) { "Ruins of Kingsmarch" };
+        private static readonly HashSet<string> AbyssMaps = new(StringComparer.OrdinalIgnoreCase) { "The Well of Souls" };
+        private static readonly HashSet<string> TempleMaps = new(StringComparer.OrdinalIgnoreCase) { "Vaal Ruins" };
+
         // ── Per-node static-data cache ──────────────────────────────────────
         // Reading + chasing pointers for all ~1700 atlas nodes every frame was the FPS killer
         // (tens of thousands of cross-process reads per frame). The slow-changing per-node data
@@ -105,12 +118,20 @@
                 Settings.SearchQuery = string.Empty;
             ImGui.SeparatorText("Show shortest path to");
 
-            PathRow("Citadels", ref Settings.DrawLinesToCitadel, ref Settings.CitadelPathColor, ref Settings.CitadelMaxHops);
+            ImGui.Columns(2, "PathfindingColumns", false);
+            PathRow("Arbiter Maps", ref Settings.DrawLinesToArbiterMaps, ref Settings.ArbiterPathColor, ref Settings.ArbiterMaxHops);
             PathRow("Towers", ref Settings.DrawLinesToTowers, ref Settings.TowerPathColor, ref Settings.TowerMaxHops);
             PathRow("Search", ref Settings.DrawLinesToSearch, ref Settings.SearchPathColor, ref Settings.SearchMaxHops);
             PathRow("Unique Maps", ref Settings.DrawLinesToUniqueMaps, ref Settings.UniquePathColor, ref Settings.UniqueMaxHops);
             PathRow("Lineage Maps", ref Settings.DrawLinesToLineageMaps, ref Settings.LineagePathColor, ref Settings.LineageMaxHops);
-            PathRow("Arbiter Maps", ref Settings.DrawLinesToArbiterMaps, ref Settings.ArbiterPathColor, ref Settings.ArbiterMaxHops);
+            ImGui.NextColumn();
+            PathRow("Atlas Progression", ref Settings.DrawLinesToAtlasProgression, ref Settings.AtlasProgressionPathColor, ref Settings.AtlasProgressionMaxHops);
+            PathRow("Ritual", ref Settings.DrawLinesToRitual, ref Settings.RitualPathColor, ref Settings.RitualMaxHops);
+            PathRow("Breach", ref Settings.DrawLinesToBreach, ref Settings.BreachPathColor, ref Settings.BreachMaxHops);
+            PathRow("Expedition", ref Settings.DrawLinesToExpedition, ref Settings.ExpeditionPathColor, ref Settings.ExpeditionMaxHops);
+            PathRow("Abyss", ref Settings.DrawLinesToAbyss, ref Settings.AbyssPathColor, ref Settings.AbyssMaxHops);
+            PathRow("Temple", ref Settings.DrawLinesToTemple, ref Settings.TemplePathColor, ref Settings.TempleMaxHops);
+            ImGui.Columns(1);
 
             ImGui.SliderFloat("Path Thickness", ref Settings.PathLineThickness, 1.0f, 8.0f);
 
@@ -416,9 +437,7 @@
                     bool routeTarget = false;
                     uint routeColor = 0;
                     int maxHops = 0;
-                    if (Settings.DrawLinesToCitadel && mapName.EndsWith("Citadel", StringComparison.OrdinalIgnoreCase))
-                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.CitadelPathColor); maxHops = Settings.CitadelMaxHops; }
-                    else if (Settings.DrawLinesToTowers && towers.Contains(mapName) && !completed)
+                    if (Settings.DrawLinesToTowers && towers.Contains(mapName) && !completed)
                         { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.TowerPathColor); maxHops = Settings.TowerMaxHops; }
                     else if (Settings.DrawLinesToSearch && doSearch
                         && searchList.Any(s => mapName.Contains(s, StringComparison.OrdinalIgnoreCase)))
@@ -432,6 +451,18 @@
                     else if (Settings.DrawLinesToArbiterMaps && !completed
                         && nd.Tags.Exists(t => string.Equals(t, "arbiter", StringComparison.OrdinalIgnoreCase)))
                         { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.ArbiterPathColor); maxHops = Settings.ArbiterMaxHops; }
+                    else if (Settings.DrawLinesToAtlasProgression && !completed && AtlasProgressionMaps.Contains(mapName))
+                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.AtlasProgressionPathColor); maxHops = Settings.AtlasProgressionMaxHops; }
+                    else if (Settings.DrawLinesToRitual && !completed && RitualMaps.Contains(mapName))
+                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.RitualPathColor); maxHops = Settings.RitualMaxHops; }
+                    else if (Settings.DrawLinesToBreach && !completed && BreachMaps.Contains(mapName))
+                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.BreachPathColor); maxHops = Settings.BreachMaxHops; }
+                    else if (Settings.DrawLinesToExpedition && !completed && ExpeditionMaps.Contains(mapName))
+                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.ExpeditionPathColor); maxHops = Settings.ExpeditionMaxHops; }
+                    else if (Settings.DrawLinesToAbyss && !completed && AbyssMaps.Contains(mapName))
+                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.AbyssPathColor); maxHops = Settings.AbyssMaxHops; }
+                    else if (Settings.DrawLinesToTemple && !completed && TempleMaps.Contains(mapName))
+                        { routeTarget = true; routeColor = ImGuiHelper.Color(Settings.TemplePathColor); maxHops = Settings.TempleMaxHops; }
 
                     if (Settings.HideCompletedMaps && completed)
                         continue;

@@ -13,9 +13,6 @@ namespace Atlas
 
         public string SearchQuery = string.Empty;
 
-        public bool DrawLinesToCitadel = false;
-        public Vector4 CitadelPathColor = new(0f, 0f, 1f, 50f / 255f);
-        public int CitadelMaxHops = 100;
         public bool DrawLinesToTowers = false;
         public Vector4 TowerPathColor = new(0.78f, 0.76f, 0.05f, 50f / 255f);
         public int TowerMaxHops = 100;
@@ -31,6 +28,26 @@ namespace Atlas
         public bool DrawLinesToArbiterMaps = false;
         public Vector4 ArbiterPathColor = new(1f, 0f, 0f, 50f / 255f);
         public int ArbiterMaxHops = 100;
+
+        // Named-map pathfinding categories (matched by exact display name; see Atlas.*Maps sets).
+        public bool DrawLinesToAtlasProgression = false;
+        public Vector4 AtlasProgressionPathColor = new(0.55f, 0.27f, 0.07f, 1f); // brown
+        public int AtlasProgressionMaxHops = 100;
+        public bool DrawLinesToRitual = false;
+        public Vector4 RitualPathColor = new(64f / 255f, 0f, 244f / 255f, 1f); // 64,0,244
+        public int RitualMaxHops = 100;
+        public bool DrawLinesToBreach = false;
+        public Vector4 BreachPathColor = new(255f / 255f, 51f / 255f, 189f / 255f, 1f); // 255,51,189
+        public int BreachMaxHops = 100;
+        public bool DrawLinesToExpedition = false;
+        public Vector4 ExpeditionPathColor = new(91f / 255f, 193f / 255f, 237f / 255f, 1f); // 91,193,237
+        public int ExpeditionMaxHops = 100;
+        public bool DrawLinesToAbyss = false;
+        public Vector4 AbyssPathColor = new(38f / 255f, 255f / 255f, 0f, 1f); // 38,255,0
+        public int AbyssMaxHops = 100;
+        public bool DrawLinesToTemple = false;
+        public Vector4 TemplePathColor = new(222f / 255f, 167f / 255f, 0f, 1f); // 222,167,0
+        public int TempleMaxHops = 100;
 
         public bool HideCompletedMaps = true;
         public bool HideNotAccessibleMaps = false;
