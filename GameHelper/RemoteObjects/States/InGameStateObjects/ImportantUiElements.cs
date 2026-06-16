@@ -386,17 +386,17 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 this.LargeMap.Address = data2.LargeMapPtr;
                 this.MiniMap.Address = data2.MiniMapPtr;
                 this.UpdateWorldMapPanelAddresses();
-                this.LeftPanel.Address = data1.LeftPanelPtr;
-                this.RightPanel.Address = data1.RightPanelPtr;
+                this.LeftPanel.Address = ValidUiElementOrZero(data1.LeftPanelPtr);
+                this.RightPanel.Address = ValidUiElementOrZero(data1.RightPanelPtr);
                 this.ChatParent.Address = data1.ChatParentPtr;
-                this.passiveskilltreenodes.Address = data4;
+                this.passiveskilltreenodes.Address = ValidUiElementOrZero(data4);
                 this.updatePassiveSkillTreeData();
                 {
                     var mgrOff = reader.ReadMemory<UiElementBaseOffset>(this.Address);
                     var parentAddr = reader.ReadMemory<IntPtr>(mgrOff.ChildrensPtr.First + (84 * IntPtr.Size));
                     var parentOff = reader.ReadMemory<UiElementBaseOffset>(parentAddr);
                     this.sekhemasTrialMapPanel.Address =
-                      reader.ReadMemory<IntPtr>(parentOff.ChildrensPtr.First);
+                      ValidUiElementOrZero(reader.ReadMemory<IntPtr>(parentOff.ChildrensPtr.First));
                 }
             }
 
@@ -714,18 +714,24 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
                 }
             }
 
-            // Only hand back addresses that are actually Ui elements. The panel UiElementBase
-            // instances (Atlas/Act/WorldMapPanel/...) use forceUpdate=true, so assigning a non-Ui
-            // address — which this fixed child-index path can land on for screens whose layout
-            // differs — makes UiElementBase.UpdateData throw, caught and re-logged by Address.set
-            // every frame. This is the same self-pointer check UiElementBase itself uses.
-            var resolved = reader.ReadMemory<UiElementBaseOffset>(currentAddress);
-            if (resolved.Self != IntPtr.Zero && resolved.Self != currentAddress)
+            // Only hand back addresses that are actually Ui elements (see ValidUiElementOrZero).
+            return ValidUiElementOrZero(currentAddress);
+        }
+
+        // Returns the address only if it points to a real Ui element (its self-pointer matches),
+        // otherwise IntPtr.Zero. The panel UiElementBase instances use forceUpdate=true, so assigning
+        // a non-Ui address (a stale/garbage pointer, or a fixed child-index path landing on different
+        // memory for some screens) makes UiElementBase.UpdateData throw — caught and re-logged by
+        // Address.set every frame. Validating with the same self-pointer check keeps that off the log.
+        private static IntPtr ValidUiElementOrZero(IntPtr address)
+        {
+            if (address == IntPtr.Zero)
             {
                 return IntPtr.Zero;
             }
 
-            return currentAddress;
+            var data = Core.Process.Handle.ReadMemory<UiElementBaseOffset>(address);
+            return data.Self != IntPtr.Zero && data.Self != address ? IntPtr.Zero : address;
         }
 
         private void updatePassiveSkillTreeData()
