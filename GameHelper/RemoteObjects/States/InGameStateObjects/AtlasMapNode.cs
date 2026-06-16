@@ -151,6 +151,8 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             [0x6870] = "Ritual Altars",
             [0x686F] = "Abysses",
             [0x6872] = "Area contains Breaches",
+            [0x60C1] = "Breach Stronghold",
+            [0x3A5D] = "Hive Fortress",
             [0x6760] = "Map Boss drops a Djinn Barya",
             [0x0963] = "Contains {0} additional Shrines",
             [0x3897] = "Map Boss is Possessed",
@@ -177,9 +179,6 @@ namespace GameHelper.RemoteObjects.States.InGameStateObjects
             [0x6638] = "Elemental Shrines do not appear in area",
             [0x3E16] = "Shrine Duration increased by {0}%",
             [0x6244] = "Shrines release an Azmeri Spirit when activated",
-            // Uncertain composites — still being sampled (no magnitude substitution).
-            [0x60C1] = "1 Atlas Point + Breach?",
-            [0x3A5D] = "1 Atlas Point + requires Waystone Tier 6",
         };
 
         /// <summary>
