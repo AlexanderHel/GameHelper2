@@ -1,4 +1,4 @@
-﻿// <copyright file="ObjectMagicProperties.cs" company="None">
+// <copyright file="ObjectMagicProperties.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
 

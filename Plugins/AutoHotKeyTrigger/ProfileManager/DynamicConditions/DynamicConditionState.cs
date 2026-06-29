@@ -1,4 +1,4 @@
-﻿// <copyright file="DynamicConditionState.cs" company="PlaceholderCompany">
+// <copyright file="DynamicConditionState.cs" company="PlaceholderCompany">
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
@@ -21,6 +21,7 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions
     [DynamicLinqType]
     public class DynamicConditionState : IDynamicConditionState
     {
+        private readonly InGameState state = null!;
         private readonly Lazy<NearbyMonsterInfo> nearbyMonsterInfo = null!;
 
         /// <summary>
@@ -31,6 +32,7 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions
         {
             if (state != null)
             {
+                this.state = state;
                 var player = state.CurrentAreaInstance.Player;
                 if (player.TryGetComponent<Buffs>(out var playerBuffs))
                 {
@@ -265,5 +267,48 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions
         ///     Capture the key press event
         /// </summary>
         public bool IsKeyPressedForAction(VK vk) => Utils.IsKeyPressed(vk);
+
+        /// <inheritdoc />
+        public int SummonedMinionCount(string metadataPath)
+        {
+            if (this.state == null || string.IsNullOrEmpty(metadataPath))
+            {
+                return 0;
+            }
+
+            var area = this.state.CurrentAreaInstance;
+            var player = area.Player;
+            if (!player.TryGetComponent<Actor>(out var actorComponent))
+            {
+                return 0;
+            }
+
+            var reader = GameHelper.Core.Process.Handle;
+            var data = reader.ReadMemory<ActorOffset>(actorComponent.Address);
+            var deployedEntities = reader.ReadStdVector<DeployedEntityStructure>(data.DeployedEntityArray);
+            if (deployedEntities.Length == 0)
+            {
+                return 0;
+            }
+
+            var deployedIds = new HashSet<uint>();
+            for (var i = 0; i < deployedEntities.Length; i++)
+            {
+                deployedIds.Add((uint)deployedEntities[i].EntityId);
+            }
+
+            var count = 0;
+            foreach (var (_, entity) in area.AwakeEntities)
+            {
+                if (entity.IsValid &&
+                    deployedIds.Contains(entity.Id) &&
+                    entity.Path.Contains(metadataPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
     }
 }

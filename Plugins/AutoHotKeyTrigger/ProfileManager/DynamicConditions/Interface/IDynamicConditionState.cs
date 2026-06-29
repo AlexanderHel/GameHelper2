@@ -1,4 +1,4 @@
-﻿// <copyright file="IDynamicConditionState.cs" company="PlaceholderCompany">
+// <copyright file="IDynamicConditionState.cs" company="PlaceholderCompany">
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
@@ -166,6 +166,13 @@ namespace AutoHotKeyTrigger.ProfileManager.DynamicConditions.Interface
         ///     Detect a keypress event
         /// </summary>
         bool IsKeyPressedForAction(VK vk);
+
+        /// <summary>
+        ///     Counts the number of active/summoned minions that match the metadata path (case-insensitive).
+        /// </summary>
+        /// <param name="metadataPath">The minion's metadata path (e.g. "WolfCompanionPlayerSummoned")</param>
+        /// <returns>The number of active minions matching the path</returns>
+        int SummonedMinionCount(string metadataPath);
 
         /// <summary>
         ///     Gets the value indicating if first weapon set is active or not.

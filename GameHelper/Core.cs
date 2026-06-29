@@ -1,6 +1,9 @@
-﻿// <copyright file="Core.cs" company="None">
+// <copyright file="Core.cs" company="None">
 // Copyright (c) None. All rights reserved.
 // </copyright>
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AutoHotKeyTrigger")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AHKMacro")]
 
 namespace GameHelper
 {
